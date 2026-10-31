@@ -49,6 +49,8 @@ describe('synchronisation entre machines', () => {
         favorite: false,
         sentAt: null,
         sentCount: 0,
+        creator: '',
+        sourceUrl: '',
       },
     ])
     expect(pc.organizerDomain.listCollections()).toEqual([
@@ -109,6 +111,8 @@ describe('synchronisation entre machines', () => {
         favorite: false,
         sentAt: null,
         sentCount: 0,
+        creator: '',
+        sourceUrl: '',
       },
     ])
   })

@@ -80,3 +80,12 @@ export const dimensionsSchema = z.object({
   y: z.number(),
   z: z.number(),
 })
+
+export const aboutSchema = z.object({
+  hash: z.string(),
+  title: z.string().nullable(),
+  designer: z.string().nullable(),
+  description: z.string().nullable(),
+  license: z.string().nullable(),
+  origin: z.string().nullable(),
+})

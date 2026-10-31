@@ -1,4 +1,5 @@
 import type {
+  About,
   Companion,
   Dimensions,
   FileRow,
@@ -18,6 +19,7 @@ export const LibraryApi = {
   startScan: () => request<ScanStatus>('/scan', { method: 'POST', json: {} }),
 
   getFiles: () => request<FileRow[]>('/files'),
+  getAbout: () => request<(About & { hash: string })[]>('/about'),
   getDimensions: () =>
     request<(Dimensions & { hash: string })[]>('/dimensions'),
   getContent: async (path: string): Promise<ArrayBuffer> => {

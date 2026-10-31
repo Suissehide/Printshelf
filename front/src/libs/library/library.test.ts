@@ -21,6 +21,9 @@ const model = (path: string, over: Partial<Model> = {}): Model => ({
   copies: 1,
   sentAt: null,
   dims: null,
+  creator: '',
+  sourceUrl: '',
+  about: null,
   ...over,
 })
 
@@ -75,6 +78,26 @@ describe('filterModels', () => {
       'grand.stl',
       'petit.stl',
     ])
+  })
+
+  it('trouve un modèle par son créateur ou le titre lu dans le fichier', () => {
+    const withAuthor = [
+      model('/lib/lampe.3mf', {
+        creator: 'Atelier Lumière',
+        about: {
+          title: 'Lampe lithophane',
+          designer: null,
+          description: null,
+          license: null,
+          origin: null,
+        },
+      }),
+      model('/lib/vase.stl'),
+    ]
+    expect(
+      filterModels(withAuthor, { q: 'atelier lumiere' }).map((m) => m.name),
+    ).toEqual(['lampe.3mf'])
+    expect(filterModels(withAuthor, { q: 'lithophane' })).toHaveLength(1)
   })
 
   it('ignore les paramètres d’URL invalides', () => {

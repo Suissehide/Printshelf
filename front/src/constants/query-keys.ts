@@ -11,6 +11,7 @@ export const QUERY_KEYS = {
   COMPANIONS: ['companions'],
   PRINT_INFO: ['print-info'],
   DIMENSIONS: ['dimensions'],
+  ABOUT: ['about'],
   PREFERENCES: ['preferences'],
 } as const
 

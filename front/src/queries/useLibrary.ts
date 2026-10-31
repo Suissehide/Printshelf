@@ -46,6 +46,7 @@ export const useScanQuery = () => {
   useEffect(() => {
     if (measuring !== undefined) {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DIMENSIONS })
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ABOUT })
     }
   }, [measuring, queryClient])
   return query
@@ -58,14 +59,21 @@ export const useDimensionsQuery = () =>
     queryFn: LibraryApi.getDimensions,
   })
 
+export const useAboutQuery = () =>
+  useQuery({ queryKey: QUERY_KEYS.ABOUT, queryFn: LibraryApi.getAbout })
+
 export const useModels = (): { models: Model[]; isPending: boolean } => {
   const files = useFilesQuery()
   const dimensions = useDimensionsQuery()
+  const about = useAboutQuery()
   const metas = useMetasQuery()
   const collections = useCollectionsQuery()
 
   const models = useMemo(() => {
     const metaByHash = new Map((metas.data ?? []).map((m) => [m.hash, m]))
+    const aboutByHash = new Map(
+      (about.data ?? []).map(({ hash, ...a }) => [hash, a]),
+    )
     const dimsByHash = new Map(
       (dimensions.data ?? []).map(({ hash, ...d }) => [hash, d]),
     )
@@ -90,9 +98,12 @@ export const useModels = (): { models: Model[]; isPending: boolean } => {
         copies: copies.get(f.hash) ?? 1,
         sentAt: meta?.sentAt ?? null,
         dims: dimsByHash.get(f.hash) ?? null,
+        creator: meta?.creator || aboutByHash.get(f.hash)?.designer || '',
+        sourceUrl: meta?.sourceUrl || aboutByHash.get(f.hash)?.origin || '',
+        about: aboutByHash.get(f.hash) ?? null,
       }
     })
-  }, [files.data, metas.data, collections.data, dimensions.data])
+  }, [files.data, metas.data, collections.data, dimensions.data, about.data])
 
   return { models, isPending: files.isPending }
 }

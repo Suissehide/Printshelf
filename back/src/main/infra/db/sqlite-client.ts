@@ -36,6 +36,8 @@ CREATE TABLE IF NOT EXISTS model_meta (
   favorite INTEGER NOT NULL DEFAULT 0,
   sent_at INTEGER,
   sent_count INTEGER,
+  creator TEXT,
+  source_url TEXT,
   updated_at INTEGER NOT NULL,
   deleted INTEGER NOT NULL DEFAULT 0
 );
@@ -65,6 +67,14 @@ CREATE TABLE IF NOT EXISTS model_dims (
   y REAL,
   z REAL
 );
+CREATE TABLE IF NOT EXISTS model_about (
+  hash TEXT PRIMARY KEY, -- local : lu dans le fichier et son pack, recalculable partout
+  title TEXT,
+  designer TEXT,
+  description TEXT,
+  license TEXT,
+  origin TEXT
+);
 CREATE TABLE IF NOT EXISTS queue_item (
   id TEXT PRIMARY KEY,
   hash TEXT NOT NULL,
@@ -91,6 +101,8 @@ export type SyncedTable = (typeof SYNCED_TABLES)[number]
 const ADDED_COLUMNS: [string, string, string][] = [
   ['model_meta', 'sent_at', 'INTEGER'],
   ['model_meta', 'sent_count', 'INTEGER'],
+  ['model_meta', 'creator', 'TEXT'],
+  ['model_meta', 'source_url', 'TEXT'],
 ]
 
 const migrate = (db: DatabaseSync) => {

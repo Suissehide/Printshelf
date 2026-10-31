@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <img src="icons/32.png" alt="" width="20" height="20" />
+      <strong>Printshelf</strong>
+      <span id="status" class="dot" title="État de la connexion"></span>
+    </header>
+
+    <label class="row">
+      <input id="enabled" type="checkbox" />
+      Ranger automatiquement mes téléchargements de modèles
+    </label>
+    <p class="hint">Printables, MakerWorld, Thingiverse, Cults3D, MyMiniFactory. Le fichier est copié dans
+      <span id="folder">le dossier d'import</span> ; l'original reste dans vos téléchargements.</p>
+
+    <h2>Derniers imports</h2>
+    <ul id="history"><li class="empty">Aucun pour l'instant.</li></ul>
+
+    <details>
+      <summary>Adresse de Printshelf</summary>
+      <input id="server" type="url" spellcheck="false" />
+    </details>
+    <script src="popup.js" type="module"></script>
+  </body>
+</html>

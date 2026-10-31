@@ -55,8 +55,19 @@ imprimer.
   projet tranché, **durée et poids** par plateau.
 - **Fichiers joints** : rendus, notices PDF et readme rangés à côté du modèle (ou dans le pack ZIP), ouverts
   d'un clic.
+- **Créateur et source** : titre, créateur, licence, description et page d'origine sont lus dans les 3MF
+  (MakerWorld, Bambu Studio, PrusaSlicer) et dans les readme / LICENSE des packs (Thingiverse, Printables,
+  MakerWorld, Cults3D, MyMiniFactory). Vous pouvez les compléter ; la recherche trouve un modèle par son
+  créateur, et « Tous les modèles de… » regroupe ses créations.
 
 <img src="docs/images/visionneuse.png" alt="Visionneuse 3D d'un vase, dimensions et compatibilité avec les imprimantes" width="100%" />
+
+### Du navigateur à la bibliothèque
+
+L'**extension « Enregistrer dans Printshelf »** (Chrome, Edge, Brave, Firefox) range chaque modèle que vous
+téléchargez sur Printables, MakerWorld, Thingiverse, Cults3D ou MyMiniFactory : le fichier est copié dans votre
+bibliothèque avec l'image de la page, son créateur, sa description et le lien d'origine. Installation en
+quatre clics : [`extension/README.md`](extension/README.md).
 
 ### Du dossier au slicer en un geste
 
@@ -96,8 +107,8 @@ Printshelf ne supprime jamais rien lui-même.
 ### Sur tous vos ordinateurs
 
 Choisissez un dossier déjà synchronisé (iCloud Drive, Dropbox, OneDrive, Google Drive…) — le même sur
-chaque machine : **tags, notes, favoris, collections, file d'impression, imprimantes et règles de slicer** vous
-suivent. Ils sont rattachés au **contenu** des fichiers, pas à leur chemin : ils retrouvent leur modèle même
+chaque machine : **tags, notes, favoris, créateurs et liens d'origine, collections, file d'impression, imprimantes et règles
+de slicer** vous suivent. Ils sont rattachés au **contenu** des fichiers, pas à leur chemin : ils retrouvent leur modèle même
 s'il est rangé ailleurs sur l'autre ordinateur. Aucun serveur, aucun compte.
 Détails : [`docs/synchronisation.md`](docs/synchronisation.md).
 
@@ -151,6 +162,7 @@ cd deploy && docker compose up -d --build
 | --- | --- |
 | `back/` | API Node/Fastify en TypeScript (Zod, SQLite intégré à Node `node:sqlite`, aucune base à installer). Guide : [`back/CLAUDE.md`](back/CLAUDE.md) |
 | `front/` | React 19 + Vite, TanStack Router/Query/Virtual, Tailwind 4, three.js. Guide : [`front/CLAUDE.md`](front/CLAUDE.md) |
+| `extension/` | Extension de navigateur (Manifest V3, JavaScript sans build) |
 | `deploy/` | Docker Compose + Traefik, Dokploy |
 | `docs/` | Notes de conception, captures, [bibliothèque de démonstration](docs/demo/README.md) |
 

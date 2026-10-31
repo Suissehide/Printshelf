@@ -13,11 +13,18 @@ export const modelMetaSchema = z.object({
   favorite: z.boolean(),
   sentAt: z.number().nullable(),
   sentCount: z.number(),
+  creator: z.string(),
+  sourceUrl: z.string(),
 })
 export const updateMetaBodySchema = z.object({
   tags: z.array(z.string().max(60)).max(50).optional(),
   notes: z.string().max(10_000).optional(),
   favorite: z.boolean().optional(),
+  creator: z.string().trim().max(120).optional(),
+  // Lien vers la page du modèle : http(s) uniquement (jamais javascript: ni file:), ou vide.
+  sourceUrl: z
+    .union([z.literal(''), z.url({ protocol: /^https?$/ }).max(500)])
+    .optional(),
 })
 
 export const collectionSchema = z.object({

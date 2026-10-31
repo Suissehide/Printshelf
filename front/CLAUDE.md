@@ -20,7 +20,8 @@ libs/library/              # logique pure testée : filtres, doublons, slicer.ts
                            # sur le plateau ?, imprimantes courantes)
 libs/three/                # parse-3mf (composants p:path Bambu), load-model, stage, thumbnail-queue,
                            # slicer-layout (couleurs de filament, plateau affiché)
-components/model/          # panneaux de la fiche modèle : impression (plateaux), fichiers joints
+components/model/          # panneaux de la fiche modèle : impression (plateaux), créateur et source,
+                           # fichiers joints
 hooks/useOpenInSlicer.ts   # SEUL chemin d'envoi au slicer (groupé par slicer cible, un appel chacun)
 components/settings/       # panneaux de Réglages (slicers, imprimantes)
 hooks/useToast.ts          # notifications (store minimal sur useSyncExternalStore)

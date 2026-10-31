@@ -81,7 +81,9 @@ export const filterModels = (
     .split(/\s+/)
     .filter(Boolean)
   const matchesWords = (m: Model) => {
-    const haystack = normalize(`${m.path} ${m.tags.join(' ')} ${m.notes}`)
+    const haystack = normalize(
+      `${m.path} ${m.tags.join(' ')} ${m.notes} ${m.creator} ${m.about?.title ?? ''}`,
+    )
     return words.every((w) => haystack.includes(w))
   }
   return models

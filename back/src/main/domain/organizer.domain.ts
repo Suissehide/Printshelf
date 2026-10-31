@@ -9,6 +9,8 @@ import type {
 export type ModelMetaRow = SyncedRow & {
   sent_at: number | null
   sent_count: number | null
+  creator: string | null
+  source_url: string | null
   tags: string
   notes: string
   favorite: number
@@ -31,6 +33,9 @@ export type ModelMeta = {
   // Dernier envoi au slicer (toutes machines confondues) et nombre d'envois.
   sentAt: number | null
   sentCount: number
+  // Saisis par l'utilisateur ; priment sur ce qui est lu dans le fichier.
+  creator: string
+  sourceUrl: string
   hash: string
   tags: string[]
   notes: string
@@ -68,6 +73,8 @@ const toMeta = (m: ModelMetaRow): ModelMeta => ({
   favorite: m.favorite === 1,
   sentAt: m.sent_at ?? null,
   sentCount: m.sent_count ?? 0,
+  creator: m.creator ?? '',
+  sourceUrl: m.source_url ?? '',
 })
 
 // Tout ce que l'utilisateur ajoute par-dessus ses fichiers : tags, notes, favoris, collections,
@@ -95,7 +102,9 @@ export class OrganizerDomain {
 
   updateMeta(
     hash: string,
-    patch: Partial<Pick<ModelMeta, 'tags' | 'notes' | 'favorite'>>,
+    patch: Partial<
+      Pick<ModelMeta, 'tags' | 'notes' | 'favorite' | 'creator' | 'sourceUrl'>
+    >,
   ): ModelMeta {
     const next = { ...this.#meta(hash), ...patch }
     next.tags = [
@@ -103,6 +112,22 @@ export class OrganizerDomain {
     ].sort()
     this.#saveMeta(next)
     return next
+  }
+
+  // Complète créateur et lien d'origine sans écraser une saisie de l'utilisateur (import navigateur).
+  fillMeta(hash: string, values: { creator: string; sourceUrl: string }): void {
+    const current = this.#meta(hash)
+    const next = {
+      ...current,
+      creator: current.creator || values.creator,
+      sourceUrl: current.sourceUrl || values.sourceUrl,
+    }
+    if (
+      next.creator !== current.creator ||
+      next.sourceUrl !== current.sourceUrl
+    ) {
+      this.#saveMeta(next)
+    }
   }
 
   // Appelé à chaque envoi au slicer : alimente la vue « Envoyés au slicer ».
@@ -129,6 +154,8 @@ export class OrganizerDomain {
           favorite: false,
           sentAt: null,
           sentCount: 0,
+          creator: '',
+          sourceUrl: '',
         }
   }
 
@@ -140,6 +167,8 @@ export class OrganizerDomain {
       favorite: meta.favorite ? 1 : 0,
       sent_at: meta.sentAt,
       sent_count: meta.sentCount,
+      creator: meta.creator.trim() || null,
+      source_url: meta.sourceUrl.trim() || null,
     })
   }
 

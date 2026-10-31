@@ -12,6 +12,13 @@ import {
 } from '../infra/fs/companions.ts'
 import { measureModel } from '../infra/fs/dimensions.ts'
 import {
+  type About,
+  aboutFrom3mf,
+  detectSource,
+  EMPTY_ABOUT,
+  mergeAbout,
+} from '../infra/fs/model-about.ts'
+import {
   ARCHIVE_SEPARATOR,
   embeddedThumbnail,
   extensionOf,
@@ -253,28 +260,41 @@ export class LibraryDomain {
 
   #measuringNow = false
 
-  // Mesure, un par un et en tâche de fond, les contenus jamais mesurés. Le résultat (même
-  // « impossible ») est mémorisé par hash : chaque contenu n'est lu qu'une fois.
-  // ponytail: au-delà de 300 Mo le fichier n'est pas chargé en mémoire pour être mesuré.
+  listAbout() {
+    return this.#files.listAbout()
+  }
+
+  // Analyse, un par un et en tâche de fond, les contenus jamais analysés : dimensions, puis
+  // « à propos » (créateur, source…) lu dans le 3MF et dans les readme du pack. Le résultat (même
+  // « rien trouvé ») est mémorisé par hash : chaque contenu n'est lu qu'une fois.
+  // ponytail: au-delà de 300 Mo le fichier n'est pas chargé en mémoire pour être analysé.
   async #measureMissing(): Promise<void> {
     if (this.#measuringNow) {
       return
     }
     this.#measuringNow = true
     try {
-      const todo = this.#files.unmeasured()
+      const todo = this.#files.unanalyzed()
       this.#status = { ...this.#status, measuring: todo.length }
       for (const file of todo) {
         if (this.#status.running) {
-          break // un scan a repris : il relancera la mesure à la fin
+          break // un scan a repris : il relancera l'analyse à la fin
         }
-        const dims =
+        const data =
           file.size > 300_000_000
             ? null
-            : await Promise.resolve(
-                measureModel(file.ext, await readModel(file.path)),
-              ).catch(() => null)
-        this.#files.setDimensions(file.hash, dims)
+            : await readModel(file.path).catch(() => null)
+        if (!file.measured) {
+          const dims = data
+            ? await Promise.resolve(measureModel(file.ext, data)).catch(
+                () => null,
+              )
+            : null
+          this.#files.setDimensions(file.hash, dims)
+        }
+        if (!file.described) {
+          this.#files.setAbout(file.hash, await this.#describe(file, data))
+        }
         this.#status = {
           ...this.#status,
           measuring: this.#status.measuring - 1,
@@ -284,6 +304,29 @@ export class LibraryDomain {
       this.#measuringNow = false
       this.#status = { ...this.#status, measuring: 0 }
     }
+  }
+
+  async #describe(
+    file: { path: string; ext: string },
+    data: Buffer | null,
+  ): Promise<About> {
+    const fromModel =
+      data && file.ext === '3mf'
+        ? await aboutFrom3mf(data).catch(() => EMPTY_ABOUT)
+        : EMPTY_ABOUT
+    const texts = await this.#companionTexts(file.path).catch(() => [])
+    return mergeAbout(fromModel, detectSource(texts))
+  }
+
+  // Petits fichiers texte du pack (readme, LICENSE, attribution) : là où les sites notent la source.
+  async #companionTexts(filePath: string): Promise<string[]> {
+    const { list, read } = await this.#companions(filePath)
+    const texts = list
+      .filter((c) => c.kind === 'text' && c.size <= 64_000)
+      .slice(0, 5)
+    return Promise.all(
+      texts.map(async (c) => (await read(c.name)).toString('utf8')),
+    )
   }
 
   async #scan(only: Set<number> | null): Promise<void> {

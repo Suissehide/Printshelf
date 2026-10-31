@@ -8,6 +8,7 @@ Vue d'ensemble et démarrage : `README.md` (en français, comme l'app).
 | --- | --- |
 | `back/` | `back/CLAUDE.md` — API Fastify, SQLite, scan, synchro |
 | `front/` | `front/CLAUDE.md` — React, TanStack, three.js |
+| `extension/` | Extension navigateur « Enregistrer dans Printshelf » (`extension/README.md`) |
 | `deploy/` | Installation serveur optionnelle (Compose + Traefik, Dokploy) |
 | `docs/` | Notes de conception (`synchronisation.md`) |
 

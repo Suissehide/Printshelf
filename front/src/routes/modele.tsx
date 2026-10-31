@@ -16,6 +16,7 @@ import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { LibraryApi } from '@/api/library.api.ts'
 import { CompanionsPanel } from '@/components/model/companions-panel.tsx'
 import { PrintPanel } from '@/components/model/print-panel.tsx'
+import { SourcePanel } from '@/components/model/source-panel.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { EmptyState } from '@/components/ui/empty-state.tsx'
 import { TagInput } from '@/components/ui/tag-input.tsx'
@@ -32,6 +33,7 @@ import {
   useCollectionMutations,
   useCollectionsQuery,
   useMetaMutation,
+  useMetasQuery,
   usePreferencesQuery,
   useQueueMutations,
 } from '@/queries/useOrganizer.ts'
@@ -252,6 +254,8 @@ function ModelPage() {
   const router = useRouter()
   const { models, isPending } = useModels()
   const { data: sources = [] } = useSourcesQuery()
+  // Les champs modifiables partent des valeurs enregistrées : on attend qu'elles soient là.
+  const metasLoaded = useMetasQuery().isSuccess
   const model = models.find((m) => m.path === path)
   const meta = useMetaMutation()
   const [loaded, setLoaded] = useState<LoadedModel | null>(null)
@@ -393,6 +397,12 @@ function ModelPage() {
               plate={plate}
               onPlate={setPlate}
             />
+          </Field>
+        )}
+
+        {metasLoaded && (
+          <Field label="Créateur et source">
+            <SourcePanel key={model.path} model={model} />
           </Field>
         )}
 

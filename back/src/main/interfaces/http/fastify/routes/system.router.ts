@@ -10,8 +10,12 @@ import {
   type Slicer,
 } from '../../../../infra/system/desktop.ts'
 import {
+  importBodySchema,
+  importFolderSchema,
+  importResultSchema,
   openBodySchema,
   revealBodySchema,
+  setImportFolderBodySchema,
   setSyncFolderBodySchema,
   slicerSchema,
   syncStatusSchema,
@@ -22,7 +26,7 @@ export const systemRouter: FastifyPluginCallbackZod = (
   _options,
   done,
 ) => {
-  const { libraryDomain, organizerDomain, syncDomain, config } =
+  const { libraryDomain, organizerDomain, syncDomain, importDomain, config } =
     fastify.container
   let slicers: Promise<Slicer[]> = config.DESKTOP
     ? detectSlicers()
@@ -51,7 +55,9 @@ export const systemRouter: FastifyPluginCallbackZod = (
 
   fastify.addHook('onRequest', (request, _reply, done) => {
     const desktopOnly =
-      /^\/api\/system\/(pick-folder|slicers|open|reveal)/.test(request.url)
+      /^\/api\/(system\/(pick-folder|slicers|open|reveal)|imports)/.test(
+        request.url,
+      )
     done(
       desktopOnly && !config.DESKTOP
         ? Boom.notImplemented(
@@ -155,6 +161,37 @@ export const systemRouter: FastifyPluginCallbackZod = (
     (request) => ({
       changed: syncDomain.restore(request.body),
     }),
+  )
+
+  // * IMPORT DEPUIS LE NAVIGATEUR (mode bureau : le fichier est sur cette machine)
+
+  fastify.get(
+    '/imports/folder',
+    { schema: { response: { 200: importFolderSchema } } },
+    () => ({
+      folder: importDomain.getFolder(),
+    }),
+  )
+
+  fastify.put(
+    '/imports/folder',
+    {
+      schema: {
+        body: setImportFolderBodySchema,
+        response: { 200: importFolderSchema },
+      },
+    },
+    async (request) => ({
+      folder: await importDomain.setFolder(request.body.folder),
+    }),
+  )
+
+  fastify.post(
+    '/imports',
+    {
+      schema: { body: importBodySchema, response: { 200: importResultSchema } },
+    },
+    (request) => importDomain.import(request.body),
   )
 
   done()

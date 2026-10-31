@@ -2,6 +2,7 @@ import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 
 import {
+  aboutSchema,
   addSourceBodySchema,
   companionQuerySchema,
   companionSchema,
@@ -154,6 +155,12 @@ export const libraryRouter: FastifyPluginCallbackZod = (
       )
       return reply.type('image/png').send(png)
     },
+  )
+
+  fastify.get(
+    '/about',
+    { schema: { response: { 200: z.array(aboutSchema) } } },
+    () => libraryDomain.listAbout(),
   )
 
   fastify.get(

@@ -1,3 +1,4 @@
+import { ImportDomain } from '../domain/import.domain.ts'
 import { LibraryDomain } from '../domain/library.domain.ts'
 import {
   type CollectionModelRow,
@@ -19,7 +20,11 @@ import type { Config } from './config.ts'
 
 // SEUL point d'assemblage de l'application (même rôle que le conteneur Awilix de MediSync,
 // sans la bibliothèque : une dizaine d'objets se câblent à la main sans détour).
-export const buildContainer = (config: Config) => {
+// `fetchImpl` : remplaçable dans les tests (téléchargement des couvertures).
+export const buildContainer = (
+  config: Config,
+  { fetchImpl = fetch }: { fetchImpl?: typeof fetch } = {},
+) => {
   const db = createSqliteClient(config.DATA_DIR)
   const fileRepository = new FileRepository(db)
 
@@ -29,7 +34,15 @@ export const buildContainer = (config: Config) => {
   const modelMetaRepository = new SyncedRepository<ModelMetaRow>(
     db,
     'model_meta',
-    ['tags', 'notes', 'favorite', 'sent_at', 'sent_count'],
+    [
+      'tags',
+      'notes',
+      'favorite',
+      'sent_at',
+      'sent_count',
+      'creator',
+      'source_url',
+    ],
     onChange,
   )
   const collectionRepository = new SyncedRepository<CollectionRow>(
@@ -71,22 +84,32 @@ export const buildContainer = (config: Config) => {
   })
   sync = syncDomain
 
+  const libraryDomain = new LibraryDomain({
+    fileRepository,
+    dataDir: config.DATA_DIR,
+    sourcesRoot: config.SOURCES_ROOT,
+    logger,
+  })
+  const organizerDomain = new OrganizerDomain({
+    modelMetaRepository,
+    collectionRepository,
+    collectionModelRepository,
+    queueItemRepository,
+    preferenceRepository,
+  })
+
   return {
     config,
     logger,
     syncDomain,
-    libraryDomain: new LibraryDomain({
+    libraryDomain,
+    organizerDomain,
+    importDomain: new ImportDomain({
       fileRepository,
-      dataDir: config.DATA_DIR,
-      sourcesRoot: config.SOURCES_ROOT,
+      libraryDomain,
+      organizerDomain,
       logger,
-    }),
-    organizerDomain: new OrganizerDomain({
-      modelMetaRepository,
-      collectionRepository,
-      collectionModelRepository,
-      queueItemRepository,
-      preferenceRepository,
+      fetchImpl,
     }),
   }
 }

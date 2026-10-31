@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Enregistrer dans Printshelf",
+  "version": "0.1.0",
+  "description": "Range vos modèles 3D téléchargés dans Printshelf, avec leur créateur, leur image et le lien de la page d'origine.",
+  "permissions": ["downloads", "scripting", "storage"],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "https://www.printables.com/*",
+    "https://printables.com/*",
+    "https://makerworld.com/*",
+    "https://*.makerworld.com/*",
+    "https://www.thingiverse.com/*",
+    "https://cults3d.com/*",
+    "https://www.myminifactory.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "scripts": ["background.js"],
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": { "16": "icons/16.png", "32": "icons/32.png" }
+  },
+  "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "browser_specific_settings": {
+    "gecko": { "id": "printshelf@extension", "strict_min_version": "121.0" }
+  }
+}

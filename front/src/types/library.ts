@@ -28,6 +28,8 @@ export type ModelMeta = {
   favorite: boolean
   sentAt: number | null
   sentCount: number
+  creator: string
+  sourceUrl: string
 }
 
 export type Collection = {
@@ -69,6 +71,10 @@ export type Model = FileRow & {
   copies: number
   sentAt: number | null
   dims: Dimensions | null
+  // Créateur et lien effectifs : saisis par l'utilisateur, sinon lus dans le fichier ou son pack.
+  creator: string
+  sourceUrl: string
+  about: About | null
 }
 
 export type Companion = {
@@ -108,3 +114,12 @@ export type SlicerPreferences = {
   tagRules: { tag: string; slicerId: string }[]
 }
 export type Preferences = { slicers: SlicerPreferences; printers: Printer[] }
+
+// Lu dans le 3MF (métadonnées) ou dans les readme du pack.
+export type About = {
+  title: string | null
+  designer: string | null
+  description: string | null
+  license: string | null
+  origin: string | null
+}

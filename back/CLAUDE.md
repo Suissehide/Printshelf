@@ -20,6 +20,8 @@ domain/library.domain.ts       # sources, scan en arrière-plan + surveillance, 
                                # fichiers joints, infos d'impression, miniatures de plateau
 domain/organizer.domain.ts     # tags/notes/favoris, envois au slicer, collections, file d'impression,
                                # préférences synchronisées (imprimantes, règles de slicer)
+domain/import.domain.ts        # import depuis l'extension : copie dans le dossier d'import, couverture,
+                               # LISEZMOI, créateur/lien (sans écraser une saisie)
 domain/sync.domain.ts          # synchro entre machines (voir docs/synchronisation.md)
 infra/db/sqlite-client.ts      # schéma SQLite (tables locales vs synchronisées)
 infra/repositories/            # FileRepository (local : sources, index, dimensions, réglages),
@@ -28,6 +30,7 @@ infra/fs/zip-reader.ts         # lecteur ZIP sans dépendance (3MF et archives),
 infra/fs/model-files.ts        # parcours, hash, lecture (y compris dans une archive), miniature 3MF
 infra/fs/print-info.ts         # réglages de slicer d'un 3MF (Bambu/Orca/Prusa) : plateaux, filaments, durée
 infra/fs/dimensions.ts         # mesure X×Y×Z d'un STL/3MF/OBJ/PLY, sans moteur 3D
+infra/fs/model-about.ts        # créateur, titre, licence, page d'origine (métadonnées 3MF, readme du pack)
 infra/fs/companions.ts         # images/PDF/readme voisins d'un modèle (disque ou archive)
 infra/system/desktop.ts        # sélecteur de dossier natif, Finder/Explorateur, slicers installés
 interfaces/http/fastify/       # serveur, garde-fous (plugins/guard.plugin.ts), routes, schémas Zod
@@ -44,6 +47,10 @@ interfaces/http/fastify/       # serveur, garde-fous (plugins/guard.plugin.ts), 
   fichiers de synchro d'une version plus ancienne ne la portent pas.
 - **Les fichiers des sources ne sont jamais modifiés.** Une entrée d'archive à ouvrir dans un slicer est
   extraite dans `DATA_DIR/extracted/`.
+- **Analyse en tâche de fond** (`LibraryDomain.#measureMissing`) : après chaque scan, chaque contenu
+  jamais vu est lu une fois pour ses dimensions (`model_dims`) et son « à propos » (`model_about`), deux
+  tables LOCALES par hash. Ce que l'utilisateur saisit (créateur, lien) vit dans `model_meta`
+  (synchronisé) et prime côté front. Un lien d'origine n'est accepté qu'en http(s).
 - **Fichiers joints : seul un nom de la liste calculée est servi** (`readCompanion`), jamais un chemin
   reçu tel quel ; la recherche ne sort jamais de la source ni de l'archive. SVG exclu (script possible).
 - **Garde-fous HTTP** (`guard.plugin.ts`) : hôte autorisé (anti DNS-rebinding), écritures en JSON/PNG

@@ -1,6 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite'
 
 import { inTransaction } from '../db/sqlite-client.ts'
+import type { About } from '../fs/model-about.ts'
 
 export type Source = { id: number; path: string; created_at: string }
 
@@ -87,13 +88,49 @@ export class FileRepository {
       .all() as { hash: string; x: number; y: number; z: number }[]
   }
 
-  // Un chemin par contenu encore jamais mesuré.
-  unmeasured(): Pick<FileRow, 'hash' | 'path' | 'ext' | 'size'>[] {
+  // Un chemin par contenu encore jamais analysé (dimensions ou « à propos »).
+  unanalyzed(): (Pick<FileRow, 'hash' | 'path' | 'ext' | 'size'> & {
+    measured: number
+    described: number
+  })[] {
     return this.#db
       .prepare(
-        'SELECT hash, MIN(path) AS path, ext, size FROM file WHERE hash NOT IN (SELECT hash FROM model_dims) GROUP BY hash',
+        `SELECT hash, MIN(path) AS path, ext, size,
+           hash IN (SELECT hash FROM model_dims) AS measured,
+           hash IN (SELECT hash FROM model_about) AS described
+         FROM file
+         WHERE hash NOT IN (SELECT hash FROM model_dims) OR hash NOT IN (SELECT hash FROM model_about)
+         GROUP BY hash`,
       )
-      .all() as Pick<FileRow, 'hash' | 'path' | 'ext' | 'size'>[]
+      .all() as (Pick<FileRow, 'hash' | 'path' | 'ext' | 'size'> & {
+      measured: number
+      described: number
+    })[]
+  }
+
+  // * À PROPOS (créateur, source…) lus dans les fichiers
+
+  listAbout(): ({ hash: string } & About)[] {
+    return this.#db
+      .prepare(
+        'SELECT * FROM model_about WHERE title IS NOT NULL OR designer IS NOT NULL OR description IS NOT NULL OR license IS NOT NULL OR origin IS NOT NULL',
+      )
+      .all() as ({ hash: string } & About)[]
+  }
+
+  setAbout(hash: string, about: About): void {
+    this.#db
+      .prepare(
+        'INSERT OR REPLACE INTO model_about (hash, title, designer, description, license, origin) VALUES (?, ?, ?, ?, ?, ?)',
+      )
+      .run(
+        hash,
+        about.title,
+        about.designer,
+        about.description,
+        about.license,
+        about.origin,
+      )
   }
 
   setDimensions(
