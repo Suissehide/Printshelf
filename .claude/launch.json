@@ -1,0 +1,27 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "printshelf-back",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "back",
+        "run",
+        "dev"
+      ],
+      "port": 4747
+    },
+    {
+      "name": "printshelf-front",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "front",
+        "run",
+        "dev"
+      ],
+      "port": 4271
+    }
+  ]
+}

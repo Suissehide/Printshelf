@@ -1,0 +1,59 @@
+# Variante Dokploy de ../compose.yaml : Dokploy gère lui-même Traefik, le réseau et le
+# certificat. Le domaine se déclare dans l'interface (onglet « Domains », service `front`,
+# port 80) ; renseigner les variables de ../.env.example dans l'onglet « Environment ».
+services:
+  back:
+    build:
+      context: ../../back
+      dockerfile: deploy/Dockerfile
+      target: app
+      args:
+        NODE_VERSION: ${NODE_VERSION}
+    image: ${APP_IMAGE_NAME}-back:${VERSION:-latest}
+    environment:
+      - ALLOWED_HOSTS=${TRAEFIK_HOST}
+      - AUTH_USER=${AUTH_USER}
+      - AUTH_PASSWORD=${AUTH_PASSWORD}
+      - SOURCES_ROOT=/models
+    volumes:
+      - printshelf-data:/data
+      - ${MODELS_DIR}:/models:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4747/api/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+
+  front:
+    build:
+      context: ../../front
+      dockerfile: deploy/Dockerfile
+      target: app
+      args:
+        NODE_VERSION: ${NODE_VERSION}
+    image: ${APP_IMAGE_NAME}-front:${VERSION:-latest}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      back:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  printshelf-data:

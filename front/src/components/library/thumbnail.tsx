@@ -1,0 +1,76 @@
+import { Box } from 'lucide-react'
+import { useEffect, useState } from 'react'
+
+import { LibraryApi } from '@/api/library.api.ts'
+import { requestThumbnail } from '@/libs/three/thumbnail-queue.ts'
+import { cn } from '@/utils/cn.ts'
+
+type State = 'loading' | 'ready' | 'failed'
+
+// Miniature du cache du back (ou intégrée au 3MF) ; à défaut, rendue en 3D dans le navigateur.
+export const Thumbnail = ({
+  hash,
+  path,
+  ext,
+  className,
+}: {
+  hash: string
+  path: string
+  ext: string
+  className?: string
+}) => {
+  const [src, setSrc] = useState(() => LibraryApi.thumbnailUrl(hash, path))
+  const [state, setState] = useState<State>('loading')
+
+  useEffect(() => {
+    setSrc(LibraryApi.thumbnailUrl(hash, path))
+    setState('loading')
+  }, [hash, path])
+
+  const onError = () => {
+    if (src.startsWith('blob:')) {
+      setState('failed')
+      return
+    }
+    void requestThumbnail(hash, path, ext).then((url) => {
+      if (url) {
+        setSrc(url)
+      } else {
+        setState('failed')
+      }
+    })
+  }
+
+  return (
+    <div
+      className={cn(
+        'thumb-stage relative grid place-items-center overflow-hidden',
+        className,
+      )}
+    >
+      {state !== 'failed' && (
+        <img
+          src={src}
+          alt=""
+          loading="lazy"
+          draggable={false}
+          onLoad={() => setState('ready')}
+          onError={onError}
+          className={cn(
+            'size-full object-contain p-[6%] transition-opacity duration-300',
+            state === 'ready' ? 'opacity-100' : 'opacity-0',
+          )}
+        />
+      )}
+      {state !== 'ready' && (
+        <Box
+          className={cn(
+            'absolute size-7 text-line-strong',
+            state === 'loading' && 'animate-pulse',
+          )}
+          strokeWidth={1.25}
+        />
+      )}
+    </div>
+  )
+}

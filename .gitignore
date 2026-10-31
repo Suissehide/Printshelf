@@ -1,0 +1,7 @@
+node_modules
+.DS_Store
+.env
+back/data
+front/dist
+front/.tanstack
+.claude/settings.local.json

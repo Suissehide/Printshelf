@@ -1,0 +1,63 @@
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import { describe, expect, it } from 'vitest'
+
+import { measureModel } from '../main/infra/fs/dimensions.ts'
+
+const fixture = (name: string) =>
+  fs.readFile(path.join(import.meta.dirname, 'fixtures', name))
+
+const binaryStl = (triangles: number[][][]) => {
+  const data = Buffer.alloc(84 + triangles.length * 50)
+  data.writeUInt32LE(triangles.length, 80)
+  triangles.forEach((t, i) => {
+    t.forEach((v, j) => {
+      v.forEach((c, k) => {
+        data.writeFloatLE(c, 84 + i * 50 + 12 + j * 12 + k * 4)
+      })
+    })
+  })
+  return data
+}
+
+describe('measureModel', () => {
+  it('mesure les STL texte et binaires, OBJ et PLY', async () => {
+    const ascii = Buffer.from(
+      'solid t\nfacet normal 0 0 0\nouter loop\nvertex 0 0 0\nvertex 120.5 0 0\nvertex 0 40 -2e1\nendloop\nendfacet\nendsolid t\n',
+    )
+    expect(await measureModel('stl', ascii)).toEqual({ x: 120.5, y: 40, z: 20 })
+    const binary = binaryStl([
+      [
+        [-10, 0, 0],
+        [10, 5, 0],
+        [0, 0, 30],
+      ],
+    ])
+    expect(await measureModel('stl', binary)).toEqual({ x: 20, y: 5, z: 30 })
+    expect(
+      await measureModel(
+        'obj',
+        Buffer.from('# cube\nv 0 0 0\nv 2 3 4\nvn 9 9 9\nf 1 2 1\n'),
+      ),
+    ).toEqual({ x: 2, y: 3, z: 4 })
+    const ply =
+      'ply\nformat ascii 1.0\nelement vertex 2\nproperty float x\nproperty float y\nproperty float z\nelement face 0\nproperty list uchar int vertex_indices\nend_header\n0 0 0\n5 6 7\n'
+    expect(await measureModel('ply', Buffer.from(ply))).toEqual({
+      x: 5,
+      y: 6,
+      z: 7,
+    })
+  })
+
+  it('mesure chaque objet d’un projet Bambu séparément, pas l’étendue des plateaux', async () => {
+    // Plateau 1 : cube de 20 mm. Plateau 2 (à 282 mm de là) : tour 12×12 surmontée d'un cube de 8 → 20 mm.
+    expect(
+      await measureModel('3mf', await fixture('bambu_plateaux.3mf')),
+    ).toEqual({ x: 20, y: 20, z: 20 })
+  })
+
+  it('ne mesure pas ce qu’il ne sait pas lire', async () => {
+    expect(await measureModel('glb', Buffer.from('glTF'))).toBeNull()
+    expect(await measureModel('stl', Buffer.from('pas un stl'))).toBeNull()
+  })
+})

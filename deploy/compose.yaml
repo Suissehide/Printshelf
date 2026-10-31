@@ -1,0 +1,92 @@
+name: printshelf
+
+# Installation SERVEUR de Printshelf (NAS, VPS…), derrière Traefik. Pour l'usage courant sur un
+# ordinateur, ce dossier est inutile : voir le README (start.command / start.bat).
+#
+# En mode serveur, le back n'ouvre ni slicer ni Finder (DESKTOP=false) : le front propose
+# « Télécharger » à la place. Il exige un mot de passe (AUTH_PASSWORD) et n'accepte que les
+# noms d'hôte déclarés (ALLOWED_HOSTS).
+
+networks:
+  # Réseau externe partagé avec Traefik : seul le front y est branché.
+  proxy:
+    name: proxy
+    external: true
+  # Réseau privé front <-> back. internal: true => le back n'est joignable que par le front.
+  printshelf-internal:
+    name: printshelf-internal
+    internal: true
+
+volumes:
+  # Base SQLite (tags, collections, file d'impression, index) et cache des miniatures.
+  printshelf-data:
+
+services:
+  back:
+    build:
+      context: ../back
+      dockerfile: deploy/Dockerfile
+      args:
+        NODE_VERSION: ${NODE_VERSION}
+      target: app
+    image: "${CONTAINER_REGISTRY_PREFIX}${APP_IMAGE_NAME}-back:${VERSION:-latest}"
+    container_name: "${APP_IMAGE_NAME}-back"
+    environment:
+      - ALLOWED_HOSTS=${TRAEFIK_HOST}
+      - AUTH_USER
+      - AUTH_PASSWORD
+      - SOURCES_ROOT=/models
+    volumes:
+      - printshelf-data:/data
+      # Lecture seule : Printshelf ne modifie jamais les fichiers des modèles.
+      - ${MODELS_DIR}:/models:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4747/api/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - printshelf-internal
+    restart: unless-stopped
+
+  front:
+    build:
+      context: ../front
+      dockerfile: deploy/Dockerfile
+      args:
+        NODE_VERSION: ${NODE_VERSION}
+      target: app
+    image: "${CONTAINER_REGISTRY_PREFIX}${APP_IMAGE_NAME}-front:${VERSION:-latest}"
+    container_name: "${APP_IMAGE_NAME}-front"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.${APP_IMAGE_NAME}.rule=Host(`${TRAEFIK_HOST}`)"
+      - "traefik.http.routers.${APP_IMAGE_NAME}.entrypoints=https"
+      - "traefik.http.routers.${APP_IMAGE_NAME}.tls=true"
+      - "traefik.http.routers.${APP_IMAGE_NAME}.tls.certresolver=${TRAEFIK_CERT_RESOLVER}"
+      - "traefik.http.services.${APP_IMAGE_NAME}.loadbalancer.server.port=80"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - proxy
+      - printshelf-internal
+    depends_on:
+      back:
+        condition: service_healthy
+    restart: unless-stopped
