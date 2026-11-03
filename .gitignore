@@ -6,3 +6,4 @@ front/dist
 front/.tanstack
 .claude/settings.local.json
 extension-firefox/
+.printshelf-version

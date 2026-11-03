@@ -6,7 +6,7 @@ ROOT="$(pwd)"
 APP="$HOME/Applications/Printshelf.app"
 AGENT="$HOME/Library/LaunchAgents/app.printshelf.plist"
 
-# * L'application : ouvre Printshelf s'il tourne déjà, sinon le démarre dans un Terminal.
+# * L'application : ouvre Printshelf s'il tourne déjà et est à jour, sinon le (re)démarre dans un Terminal.
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp macos/printshelf.icns "$APP/Contents/Resources/printshelf.icns"
@@ -25,13 +25,10 @@ cat > "$APP/Contents/Info.plist" <<EOF
 </dict>
 </plist>
 EOF
+# Tout passe par start.command (--app) : l'app suit ses évolutions sans avoir à être recréée.
 cat > "$APP/Contents/MacOS/Printshelf" <<EOF
 #!/bin/sh
-if curl -fsS -o /dev/null http://localhost:4747/api/health; then
-  open http://localhost:4747
-else
-  open -a Terminal "$ROOT/start.command"
-fi
+exec /bin/sh "$ROOT/start.command" --app
 EOF
 chmod +x "$APP/Contents/MacOS/Printshelf"
 touch "$APP" # rafraîchit l'icône dans le Finder
