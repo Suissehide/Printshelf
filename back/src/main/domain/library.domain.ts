@@ -3,6 +3,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import Boom from '@hapi/boom'
 
+import { withArchive } from '../infra/fs/archive.ts'
 import {
   archiveCompanions,
   CONTENT_TYPES,
@@ -10,7 +11,7 @@ import {
   companionKind,
   diskCompanions,
 } from '../infra/fs/companions.ts'
-import { measureModel } from '../infra/fs/dimensions.ts'
+import { countTriangles, measureModel } from '../infra/fs/dimensions.ts'
 import {
   type About,
   aboutFrom3mf,
@@ -22,9 +23,11 @@ import {
   ARCHIVE_SEPARATOR,
   embeddedThumbnail,
   extensionOf,
+  gcodeThumbnail,
   hashFile,
   isArchive,
   isModel,
+  readHead,
   readModel,
   sha1,
   splitArchivePath,
@@ -285,12 +288,7 @@ export class LibraryDomain {
             ? null
             : await readModel(file.path).catch(() => null)
         if (!file.measured) {
-          const dims = data
-            ? await Promise.resolve(measureModel(file.ext, data)).catch(
-                () => null,
-              )
-            : null
-          this.#files.setDimensions(file.hash, dims)
+          await this.#measure(file, data)
         }
         if (!file.described) {
           this.#files.setAbout(file.hash, await this.#describe(file, data))
@@ -304,6 +302,18 @@ export class LibraryDomain {
       this.#measuringNow = false
       this.#status = { ...this.#status, measuring: 0 }
     }
+  }
+
+  async #measure(file: { hash: string; ext: string }, data: Buffer | null) {
+    if (!data) {
+      this.#files.setDimensions(file.hash, null)
+      return
+    }
+    const [dims, triangles] = await Promise.all([
+      Promise.resolve(measureModel(file.ext, data)).catch(() => null),
+      countTriangles(file.ext, data).catch(() => null),
+    ])
+    this.#files.setDimensions(file.hash, dims, triangles)
   }
 
   async #describe(
@@ -406,12 +416,12 @@ export class LibraryDomain {
     ) {
       return previousEntries.map((r) => ({ ...r, source_id: sourceId }))
     }
-    return withZip(await fileSource(filePath), async (entries, source) => {
+    return withArchive(filePath, async (archive) => {
       const rows: FileRow[] = []
-      for (const entry of entries.filter(
+      for (const entry of archive.entries.filter(
         (e) => isModel(e.name) && !e.name.startsWith('__MACOSX/'),
       )) {
-        const data = await readEntry(source, entry)
+        const data = await archive.read(entry.name)
         rows.push({
           ...base,
           path: `${filePath}${ARCHIVE_SEPARATOR}${entry.name}`,
@@ -494,16 +504,13 @@ export class LibraryDomain {
     const row = this.#requireIndexed(filePath)
     const inArchive = splitArchivePath(filePath)
     if (inArchive) {
-      return withZip(await fileSource(inArchive.archive), (entries) => {
-        const { base, list } = archiveCompanions(entries, inArchive.entry)
-        const read = async (name: string) =>
-          withZip(await fileSource(inArchive.archive), (all, source) => {
-            const entry = all.find((e) => e.name === base + name)
-            if (!entry) {
-              throw Boom.notFound('Entrée introuvable')
-            }
-            return readEntry(source, entry)
-          })
+      return withArchive(inArchive.archive, (archive) => {
+        const { base, list } = archiveCompanions(
+          archive.entries,
+          inArchive.entry,
+        )
+        const read = (name: string) =>
+          withArchive(inArchive.archive, (again) => again.read(base + name))
         return Promise.resolve({ list, read })
       })
     }
@@ -578,12 +585,13 @@ export class LibraryDomain {
       return existing
     }
     const row = filePath ? this.#files.findFile(filePath) : undefined
-    if (row?.hash !== hash || row.ext !== '3mf') {
+    if (row?.hash !== hash || !['3mf', 'gcode'].includes(row.ext)) {
       return null // le front la rendra en 3D puis l'enverra
     }
-    const png = await embeddedThumbnail(await readModel(row.path)).catch(
-      () => undefined,
-    )
+    const png = await (row.ext === 'gcode'
+      ? readHead(row.path, 4 * 1024 * 1024).then(gcodeThumbnail)
+      : readModel(row.path).then(embeddedThumbnail)
+    ).catch(() => undefined)
     if (!png) {
       return null
     }

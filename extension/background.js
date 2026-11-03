@@ -5,7 +5,7 @@ import { readPageInfo } from './page-info.js'
 // téléchargé reste où il est.
 
 const SITES = /(^|\.)(printables\.com|makerworld\.com|thingiverse\.com|cults3d\.com|myminifactory\.com)$/
-const MODEL_FILE = /\.(3mf|stl|obj|ply|glb|zip)$/i
+const MODEL_FILE = /\.(3mf|stl|obj|ply|glb|step|stp|gcode|zip|rar|7z)$/i
 const DEFAULTS = { server: 'http://localhost:4747', enabled: true }
 
 const settings = async () => ({ ...DEFAULTS, ...(await chrome.storage.local.get(['server', 'enabled'])) })

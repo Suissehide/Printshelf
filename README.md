@@ -6,8 +6,8 @@
 
 **Votre bibliothèque de modèles 3D, prête à partir au slicer.**
 
-Printshelf range les fichiers `.3mf`, `.stl`, `.obj`, `.ply` et `.glb` que vous avez déjà — archives ZIP
-comprises — les affiche en miniatures, les ouvre en 3D, et les envoie à votre slicer en un geste.
+Printshelf range les fichiers `.3mf`, `.stl`, `.obj`, `.ply`, `.glb`, `.step` et `.gcode` que vous avez
+déjà — archives ZIP, RAR et 7z comprises — les affiche en miniatures, les ouvre en 3D, et les envoie à votre slicer en un geste.
 Tout reste sur votre ordinateur : rien n'est déplacé, renommé ni envoyé en ligne.
 
 ![Node.js 24+](https://img.shields.io/badge/Node.js-24%2B-3c873a?logo=node.js&logoColor=white)
@@ -36,11 +36,14 @@ imprimer.
 
 - **Une miniature pour chaque modèle** — celle enregistrée par le slicer dans le 3MF (Bambu Studio,
   OrcaSlicer, PrusaSlicer), sinon un rendu 3D fait sur place puis mis en cache.
-- **Archives ZIP parcourues comme des dossiers**, sans extraction.
+- **Archives parcourues comme des dossiers** : ZIP lu sans extraction, RAR et 7z via le `tar` du système.
+- **STEP et G-code** : pièces de CAO ouvertes en 3D dans le navigateur ; aperçu des trajets d'un G-code
+  et sa miniature intégrée (PrusaSlicer, Bambu Studio, Orca).
 - **Recherche instantanée** (`⌘K` / `Ctrl+K`) dans les noms, dossiers, tags et notes ; filtres par format,
   source, collection, tag ; favoris, « sans collection », « dans des archives ».
-- **Collections et tags** pour regrouper sans déplacer un seul fichier, et des **actions groupées** sur une
-  sélection (`⌘`/`Ctrl`-clic, `Maj`-clic).
+- **Collections et tags** pour regrouper sans déplacer un seul fichier, avec des **tags suggérés** tirés
+  des dossiers et du nom du fichier, et des **actions groupées** sur une sélection (`⌘`/`Ctrl`-clic,
+  `Maj`-clic) : tag, collection, favori, créateur et page d'origine.
 - **Grille virtualisée** : fluide même sur des dizaines de milliers de modèles.
 - **Surveillance des dossiers** : un modèle téléchargé apparaît tout seul.
 
@@ -99,7 +102,9 @@ envoyer au slicer**.
 ### Faire le ménage
 
 Le **détecteur de doublons** regroupe les copies exactes — y compris dans les archives — suggère celle à
-garder et la place récupérable, et signale les doublons probables (même nom, contenu différent).
+garder et la place récupérable, retrouve **le même modèle dans deux fichiers différents** (un STL et son 3MF :
+même nombre de triangles, mêmes dimensions, même pivoté) et signale les doublons probables (même nom,
+contenu différent).
 Printshelf ne supprime jamais rien lui-même.
 
 <img src="docs/images/doublons.png" alt="Détecteur de doublons" width="100%" />
@@ -124,9 +129,11 @@ cd Printshelf
 Puis :
 
 - **macOS** : double-cliquez sur `start.command`.
+  Pour une vraie application dans le Dock, lancez une fois `macos/creer-app.command` : elle crée
+  `Printshelf.app` dans `~/Applications` et propose le lancement à l'ouverture de session.
 - **Windows** : double-cliquez sur `start.bat`.
   Pour une icône sur le Bureau, lancez une fois `windows/creer-raccourci.bat` : le raccourci « Printshelf »
-  peut aussi être épinglé à la barre des tâches.
+  peut aussi être épinglé à la barre des tâches, et le script propose le lancement au démarrage de Windows.
 - **Linux / terminal** :
   ```shell
   npm --prefix back install && npm --prefix front install && npm --prefix front run build
@@ -143,7 +150,8 @@ deux commandes).
 | Type | Formats |
 | --- | --- |
 | Modèles (miniature, visionneuse, mesure) | `.3mf` · `.stl` · `.obj` · `.ply` · `.glb` (non mesuré) |
-| Archives parcourues | `.zip` |
+| CAO et impression (miniature, visionneuse) | `.step` / `.stp` · `.gcode` |
+| Archives parcourues | `.zip` · `.rar` · `.7z` (via `tar` : macOS, Windows 10+ ; Linux : `libarchive-tools`) |
 | Fichiers joints | `.jpg` · `.png` · `.webp` · `.gif` · `.pdf` · `.txt` · `.md` |
 | Réglages de slicer lus | Bambu Studio, OrcaSlicer, PrusaSlicer (`.3mf`) |
 
@@ -181,11 +189,12 @@ Actions les lance à chaque push.
 
 ## Feuille de route
 
-- [ ] Archives RAR et 7z
-- [ ] Doublons par géométrie (le même modèle en STL et en 3MF)
-- [ ] Application de bureau (icône, glisser-déposer vers le slicer)
+- [x] Archives RAR et 7z
+- [x] Doublons par géométrie (le même modèle en STL et en 3MF)
+- [x] STEP et aperçu du G-code
+- [x] Icône dans le Dock / sur le Bureau, lancement au démarrage
 - [ ] Tags et recherche par IA, avec votre propre clé
-- [ ] STEP et aperçu du G-code
+- [ ] G-code binaire (`.bgcode`) et arcs G2/G3 dans l'aperçu
 
 Idées et rapports de bug bienvenus dans les [issues](../../issues).
 

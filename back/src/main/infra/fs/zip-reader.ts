@@ -4,7 +4,7 @@ import zlib from 'node:zlib'
 // Lecteur ZIP minimal, sans dépendance. Sert aux 3MF (qui sont des ZIP) et aux archives .zip
 // parcourues comme des dossiers. Ne lit que le répertoire central puis l'entrée demandée :
 // un pack de plusieurs Go n'est jamais chargé en mémoire.
-// ponytail: pas de ZIP64 (archive > 4 Go ou > 65 535 entrées) ni de chiffrement ; RAR/7z non gérés.
+// ponytail: pas de ZIP64 (archive > 4 Go ou > 65 535 entrées) ni de chiffrement. RAR/7z : archive.ts.
 
 export type ByteSource = {
   size: number

@@ -25,7 +25,8 @@ export const visibleBox = (object: THREE.Object3D): THREE.Box3 => {
   object.updateMatrixWorld(true)
   const box = new THREE.Box3()
   object.traverseVisible((child) => {
-    if (child instanceof THREE.Mesh) {
+    // Lignes comprises : un G-code n'est fait que de segments.
+    if (child instanceof THREE.Mesh || child instanceof THREE.Line) {
       box.expandByObject(child)
     }
   })

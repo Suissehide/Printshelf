@@ -27,9 +27,10 @@ infra/db/sqlite-client.ts      # schéma SQLite (tables locales vs synchronisée
 infra/repositories/            # FileRepository (local : sources, index, dimensions, réglages),
                                # SyncedRepository (5 tables synchronisées)
 infra/fs/zip-reader.ts         # lecteur ZIP sans dépendance (3MF et archives), lecture par plage
+infra/fs/archive.ts            # archives vues comme des dossiers : ZIP direct, RAR/7z extraits par bsdtar
 infra/fs/model-files.ts        # parcours, hash, lecture (y compris dans une archive), miniature 3MF
 infra/fs/print-info.ts         # réglages de slicer d'un 3MF (Bambu/Orca/Prusa) : plateaux, filaments, durée
-infra/fs/dimensions.ts         # mesure X×Y×Z d'un STL/3MF/OBJ/PLY, sans moteur 3D
+infra/fs/dimensions.ts         # mesure X×Y×Z et nombre de triangles (empreinte pour les doublons de géométrie)
 infra/fs/model-about.ts        # créateur, titre, licence, page d'origine (métadonnées 3MF, readme du pack)
 infra/fs/companions.ts         # images/PDF/readme voisins d'un modèle (disque ou archive)
 infra/system/desktop.ts        # sélecteur de dossier natif, Finder/Explorateur, slicers installés

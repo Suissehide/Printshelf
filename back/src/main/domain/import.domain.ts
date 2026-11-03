@@ -2,8 +2,8 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import Boom from '@hapi/boom'
 
+import { withArchive } from '../infra/fs/archive.ts'
 import { hashFile, isArchive, isModel, sha1 } from '../infra/fs/model-files.ts'
-import { fileSource, readEntry, withZip } from '../infra/fs/zip-reader.ts'
 import type { FileRepository } from '../infra/repositories/file.repository.ts'
 import type { Logger } from '../utils/logger.ts'
 import type { LibraryDomain } from './library.domain.ts'
@@ -119,7 +119,7 @@ export class ImportDomain {
       !(isModel(source) || isArchive(source))
     ) {
       throw Boom.badRequest(
-        'Seuls les modèles 3D et les archives ZIP sont importés',
+        'Seuls les modèles 3D et les archives (ZIP, RAR, 7z) sont importés',
       )
     }
     const stat = await fs.stat(source).catch(() => null)
@@ -214,12 +214,12 @@ export class ImportDomain {
     if (isModel(file)) {
       return [await hashFile(file)]
     }
-    return withZip(await fileSource(file), async (entries, zip) => {
+    return withArchive(file, async (archive) => {
       const hashes: string[] = []
-      for (const entry of entries.filter(
+      for (const entry of archive.entries.filter(
         (e) => isModel(e.name) && !e.name.startsWith('__MACOSX/'),
       )) {
-        hashes.push(sha1(await readEntry(zip, entry)))
+        hashes.push(sha1(await archive.read(entry.name)))
       }
       return hashes
     })

@@ -100,6 +100,31 @@ describe('bibliothèque', () => {
     ).toEqual(expected.slice(1).map((c) => ({ ...c, name: `pack/${c.name}` })))
   })
 
+  it('parcourt une archive 7z comme un ZIP (via bsdtar)', async () => {
+    current = await makeLibrary()
+    execFileSync('tar', ['--format', '7zip', '-cf', 'pack.7z', 'pack'], {
+      cwd: current.source,
+    })
+    await scanned(current)
+    const files = current.app.libraryDomain.listFiles()
+    const inside = files.find(
+      (f) => f.path === `${current?.source}/pack.7z::pack/STL/dragon.stl`,
+    )
+    const onDisk = files.find(
+      (f) => f.path === `${current?.source}/pack/STL/dragon.stl`,
+    )
+    expect(inside?.hash).toBe(onDisk?.hash)
+    expect(inside?.archive).toBe(`${current.source}/pack.7z`)
+    const content = await current.app.libraryDomain.readContent(
+      inside?.path ?? '',
+    )
+    expect(content.toString()).toBe(STL)
+    const companions = await current.app.libraryDomain.listCompanions(
+      inside?.path ?? '',
+    )
+    expect(companions.map((c) => c.name)).toContain('notice.pdf')
+  })
+
   it('lit les infos d’impression et la miniature d’un plateau', async () => {
     current = await makeLibrary()
     await scanned(current)

@@ -3,15 +3,19 @@ import { createReadStream } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
-import {
-  bufferSource,
-  fileSource,
-  listEntries,
-  readEntry,
-  withZip,
-} from './zip-reader.ts'
+import { ARCHIVE_EXTENSIONS, withArchive } from './archive.ts'
+import { bufferSource, listEntries, readEntry } from './zip-reader.ts'
 
-export const MODEL_EXTENSIONS = ['3mf', 'stl', 'obj', 'ply', 'glb'] as const
+export const MODEL_EXTENSIONS = [
+  '3mf',
+  'stl',
+  'obj',
+  'ply',
+  'glb',
+  'step',
+  'stp',
+  'gcode',
+] as const
 export type ModelExtension = (typeof MODEL_EXTENSIONS)[number]
 
 // Séparateur entre le chemin d'une archive et celui d'une entrée : `pack.zip::dragon/tete.stl`.
@@ -21,7 +25,8 @@ export const extensionOf = (name: string): string =>
   path.extname(name).slice(1).toLowerCase()
 export const isModel = (name: string): boolean =>
   (MODEL_EXTENSIONS as readonly string[]).includes(extensionOf(name))
-export const isArchive = (name: string): boolean => extensionOf(name) === 'zip'
+export const isArchive = (name: string): boolean =>
+  (ARCHIVE_EXTENSIONS as readonly string[]).includes(extensionOf(name))
 
 export const splitArchivePath = (
   filePath: string,
@@ -71,18 +76,14 @@ export async function* walk(dir: string): AsyncGenerator<string> {
 }
 
 // Contenu d'un modèle, qu'il soit sur le disque ou dans une archive.
-export const readModel = async (filePath: string): Promise<Buffer> => {
+export const readModel = (filePath: string): Promise<Buffer> => {
   const inArchive = splitArchivePath(filePath)
   if (!inArchive) {
     return fs.readFile(filePath)
   }
-  return withZip(await fileSource(inArchive.archive), (entries, source) => {
-    const entry = entries.find((e) => e.name === inArchive.entry)
-    if (!entry) {
-      throw new Error('Entrée introuvable dans l’archive')
-    }
-    return readEntry(source, entry)
-  })
+  return withArchive(inArchive.archive, (archive) =>
+    archive.read(inArchive.entry),
+  )
 }
 
 // Miniature enregistrée par le slicer dans un 3MF (Bambu/Orca : plate_1.png, Prusa : thumbnail.png).
@@ -100,4 +101,41 @@ export const embeddedThumbnail = async (
     pngs.find((e) => /thumbnail/i.test(e.name)) ??
     pngs[0]
   return pick ? readEntry(source, pick) : undefined
+}
+
+// Miniature d'un G-code : PrusaSlicer, Bambu Studio et Orca l'écrivent en tête, en commentaires
+// base64 (« ; thumbnail begin 300x300 12345 » … « ; thumbnail end »). On garde la plus grande.
+export const gcodeThumbnail = (head: Buffer): Buffer | undefined => {
+  let best: { width: number; png: Buffer } | undefined
+  for (const [, width, body] of head
+    .toString('latin1')
+    .matchAll(
+      /; thumbnail begin (\d+)x\d+ \d+\r?\n([\s\S]*?); thumbnail end/g,
+    )) {
+    if (!best || Number(width) > best.width) {
+      best = {
+        width: Number(width),
+        png: Buffer.from(
+          body.replace(/^;\s?/gm, '').replace(/\s/g, ''),
+          'base64',
+        ),
+      }
+    }
+  }
+  return best?.png
+}
+
+// Premiers octets d'un fichier (sur le disque ou dans une archive).
+export const readHead = async (filePath: string, bytes: number) => {
+  if (splitArchivePath(filePath)) {
+    return (await readModel(filePath)).subarray(0, bytes)
+  }
+  const handle = await fs.open(filePath, 'r')
+  try {
+    const buffer = Buffer.alloc(bytes)
+    const { bytesRead } = await handle.read(buffer, 0, bytes, 0)
+    return buffer.subarray(0, bytesRead)
+  } finally {
+    await handle.close()
+  }
 }

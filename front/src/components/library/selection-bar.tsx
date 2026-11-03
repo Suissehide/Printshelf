@@ -1,7 +1,7 @@
-import { Download, ListPlus, Send, Star, Tag, X } from 'lucide-react'
+import { Download, ListPlus, Send, Star, Tag, User, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button.tsx'
-import { promptDialog } from '@/components/ui/dialog.tsx'
+import { formDialog, promptDialog } from '@/components/ui/dialog.tsx'
 import { useOpenInSlicer } from '@/hooks/useOpenInSlicer.ts'
 import {
   useCollectionMutations,
@@ -41,9 +41,39 @@ export const SelectionBar = ({
     }
   }
 
+  // Créateur et page d'origine de toute la sélection (un champ vide ne change rien).
+  const setSource = async () => {
+    const values = await formDialog(
+      `Créateur et source de ${plural(models.length, 'modèle')}`,
+      [
+        { name: 'creator', label: 'Créateur', placeholder: 'ex. Ellie' },
+        {
+          name: 'sourceUrl',
+          label: "Page d'origine",
+          type: 'url',
+          placeholder: 'https://www.printables.com/model/…',
+          maxLength: 500,
+        },
+      ],
+      {
+        message: 'Un champ laissé vide ne modifie rien.',
+        confirmLabel: 'Appliquer',
+      },
+    )
+    const patch = {
+      ...(values?.creator && { creator: values.creator }),
+      ...(values?.sourceUrl && { sourceUrl: values.sourceUrl }),
+    }
+    if (Object.keys(patch).length) {
+      for (const hash of hashes) {
+        meta.mutate({ hash, ...patch })
+      }
+    }
+  }
+
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-5 z-20 flex justify-center px-4">
-      <div className="pointer-events-auto flex items-center gap-1.5 rounded-2xl border border-line-strong bg-overlay p-1.5 pl-4 shadow-(--shadow-pop)">
+      <div className="pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-line-strong bg-overlay p-1.5 pl-4 shadow-(--shadow-pop)">
         <span className="mr-2 font-medium text-ink">
           {plural(models.length, 'modèle sélectionné', 'modèles sélectionnés')}
         </span>
@@ -65,6 +95,9 @@ export const SelectionBar = ({
         </select>
         <Button size="md" onClick={addTag}>
           <Tag /> Tag
+        </Button>
+        <Button size="md" onClick={setSource}>
+          <User /> Source
         </Button>
         <Button
           size="md"

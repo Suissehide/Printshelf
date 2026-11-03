@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { Model } from '../../types/library.ts'
 import { baseModelName, findDuplicates } from './duplicates.ts'
 import { filterModels, validateLibrarySearch } from './filters.ts'
+import { suggestTags } from './tags.ts'
 
 const model = (path: string, over: Partial<Model> = {}): Model => ({
   path,
@@ -67,8 +68,14 @@ describe('filterModels', () => {
   it('filtre ce qui tient sur une imprimante et liste les envois au slicer, le plus récent d’abord', () => {
     const printers = [{ id: 'mini', name: 'A1 mini', x: 180, y: 180, z: 180 }]
     const sized = [
-      model('/lib/petit.stl', { dims: { x: 50, y: 50, z: 50 }, sentAt: 10 }),
-      model('/lib/grand.stl', { dims: { x: 250, y: 50, z: 50 }, sentAt: 20 }),
+      model('/lib/petit.stl', {
+        dims: { x: 50, y: 50, z: 50, triangles: null },
+        sentAt: 10,
+      }),
+      model('/lib/grand.stl', {
+        dims: { x: 250, y: 50, z: 50, triangles: null },
+        sentAt: 20,
+      }),
       model('/lib/inconnu.glb'),
     ]
     expect(
@@ -140,5 +147,41 @@ describe('findDuplicates', () => {
       ['probable', '/a/dragon.stl', 1],
     ])
     expect(groups[0].reclaimable).toBe(200)
+  })
+
+  it('reconnaît le même modèle dans deux formats, même pivoté', () => {
+    const dims = (x: number, y: number, z: number) => ({
+      x,
+      y,
+      z,
+      triangles: 1200,
+    })
+    const groups = findDuplicates([
+      model('/a/support.stl', { hash: 'h1', dims: dims(40, 20.02, 10) }),
+      model('/a/Support plateau.3mf', {
+        hash: 'h2',
+        ext: '3mf',
+        dims: dims(20, 10, 40),
+      }),
+      model('/a/autre.stl', { hash: 'h3', dims: dims(40, 20, 11) }),
+    ])
+    expect(
+      groups.map((g) => [g.kind, g.keep.path, g.others.map((m) => m.path)]),
+    ).toEqual([['geometry', '/a/support.stl', ['/a/Support plateau.3mf']]])
+  })
+})
+
+describe('suggestTags', () => {
+  it('propose les mots des dossiers et du nom, tags connus en premier', () => {
+    expect(
+      suggestTags(
+        {
+          path: '/lib/Impression 3D/Warhammer/Dragon rouge v2/STL/dragon_tete-01.stl',
+          tags: ['dragon'],
+        },
+        '/lib/Impression 3D',
+        ['rouge'],
+      ),
+    ).toEqual(['rouge', 'warhammer', 'tete'])
   })
 })

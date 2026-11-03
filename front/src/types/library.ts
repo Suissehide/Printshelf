@@ -70,7 +70,7 @@ export type Model = FileRow & {
   collectionIds: string[]
   copies: number
   sentAt: number | null
-  dims: Dimensions | null
+  dims: Measured | null
   // Créateur et lien effectifs : saisis par l'utilisateur, sinon lus dans le fichier ou son pack.
   creator: string
   sourceUrl: string
@@ -107,6 +107,8 @@ export type PrintInfo = {
 }
 
 export type Dimensions = { x: number; y: number; z: number }
+// Dimensions et nombre de triangles mesurés par le back : l'empreinte d'une géométrie.
+export type Measured = Dimensions & { triangles: number | null }
 
 export type Printer = Dimensions & { id: string; name: string }
 export type SlicerPreferences = {

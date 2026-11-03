@@ -49,7 +49,9 @@ const matchesFilters = (
   search: LibrarySearch,
   printer: Printer | undefined,
 ): boolean =>
-  (!search.fmt || m.ext === search.fmt) &&
+  (!search.fmt ||
+    m.ext === search.fmt ||
+    (search.fmt === 'step' && m.ext === 'stp')) &&
   (search.source === undefined || m.source_id === search.source) &&
   (!search.collection || m.collectionIds.includes(search.collection)) &&
   (!search.tag || m.tags.includes(search.tag)) &&

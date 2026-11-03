@@ -7,14 +7,24 @@ import { Button } from '@/components/ui/button.tsx'
 // Même principe que les toasts : un store minimal, un seul <Dialogs /> monté à la racine,
 // et des fonctions qui renvoient une promesse. <dialog> natif : focus piégé et Échap gratuits.
 
+export type DialogField = {
+  name: string
+  label?: string
+  placeholder?: string
+  type?: 'text' | 'url'
+  required?: boolean
+  maxLength?: number
+}
+
+type Values = Record<string, string>
+
 type Request = {
   title: string
   message?: string
-  placeholder?: string
-  input: boolean
+  fields: DialogField[]
   confirmLabel: string
   danger?: boolean
-  resolve: (value: string | null) => void
+  resolve: (values: Values | null) => void
 }
 
 let current: Request | null = null
@@ -25,14 +35,14 @@ const emit = () => {
   }
 }
 
-const settle = (value: string | null) => {
-  current?.resolve(value)
+const settle = (values: Values | null) => {
+  current?.resolve(values)
   current = null
   emit()
 }
 
 const open = (request: Omit<Request, 'resolve'>) =>
-  new Promise<string | null>((resolve) => {
+  new Promise<Values | null>((resolve) => {
     current?.resolve(null)
     current = { ...request, resolve }
     emit()
@@ -46,9 +56,21 @@ export const promptDialog = (
     confirmLabel?: string
   },
 ) =>
-  open({ title, placeholder, confirmLabel, input: true }).then(
-    (value) => value?.trim() || null,
-  )
+  open({
+    title,
+    confirmLabel,
+    fields: [{ name: 'value', placeholder, required: true }],
+  }).then((values) => values?.value || null)
+
+// Plusieurs champs (valeurs sans espaces autour, vides si non remplis), ou null si annulé.
+export const formDialog = (
+  title: string,
+  fields: DialogField[],
+  { message, confirmLabel = 'Valider' } = {} as {
+    message?: string
+    confirmLabel?: string
+  },
+) => open({ title, message, fields, confirmLabel })
 
 export const confirmDialog = (
   title: string,
@@ -58,8 +80,8 @@ export const confirmDialog = (
     danger?: boolean
   },
 ) =>
-  open({ title, message, confirmLabel, danger, input: false }).then(
-    (value) => value !== null,
+  open({ title, message, confirmLabel, danger, fields: [] }).then(
+    (values) => values !== null,
   )
 
 export const Dialogs = () => {
@@ -84,7 +106,15 @@ export const Dialogs = () => {
 
   const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    settle(String(new FormData(e.currentTarget).get('value') ?? ''))
+    const data = new FormData(e.currentTarget)
+    settle(
+      Object.fromEntries(
+        request.fields.map((f) => [
+          f.name,
+          String(data.get(f.name) ?? '').trim(),
+        ]),
+      ),
+    )
   }
 
   return (
@@ -99,16 +129,24 @@ export const Dialogs = () => {
         {request.message && (
           <p className="-mt-2 text-ink-soft">{request.message}</p>
         )}
-        {request.input && (
-          <input
-            name="value"
-            required
-            autoComplete="off"
-            placeholder={request.placeholder}
-            maxLength={120}
-            className={fieldClass}
-          />
-        )}
+        {request.fields.map((f) => (
+          <label key={f.name} className="flex flex-col gap-1">
+            {f.label && (
+              <span className="text-xs text-ink-soft">{f.label}</span>
+            )}
+            <input
+              name={f.name}
+              type={f.type ?? 'text'}
+              // Lien : http(s) seulement, comme le back.
+              pattern={f.type === 'url' ? 'https?://.+' : undefined}
+              required={f.required}
+              autoComplete="off"
+              placeholder={f.placeholder}
+              maxLength={f.maxLength ?? 120}
+              className={fieldClass}
+            />
+          </label>
+        ))}
         <div className="flex justify-end gap-2">
           <Button onClick={() => settle(null)}>Annuler</Button>
           <Button

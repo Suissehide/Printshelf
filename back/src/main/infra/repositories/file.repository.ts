@@ -82,10 +82,24 @@ export class FileRepository {
 
   // * DIMENSIONS (une ligne par contenu ; x à NULL = mesure impossible, à ne pas retenter)
 
-  listDimensions(): { hash: string; x: number; y: number; z: number }[] {
+  listDimensions(): {
+    hash: string
+    x: number
+    y: number
+    z: number
+    triangles: number | null
+  }[] {
     return this.#db
-      .prepare('SELECT hash, x, y, z FROM model_dims WHERE x IS NOT NULL')
-      .all() as { hash: string; x: number; y: number; z: number }[]
+      .prepare(
+        'SELECT hash, x, y, z, triangles FROM model_dims WHERE x IS NOT NULL',
+      )
+      .all() as {
+      hash: string
+      x: number
+      y: number
+      z: number
+      triangles: number | null
+    }[]
   }
 
   // Un chemin par contenu encore jamais analysé (dimensions ou « à propos »).
@@ -136,12 +150,13 @@ export class FileRepository {
   setDimensions(
     hash: string,
     dims: { x: number; y: number; z: number } | null,
+    triangles: number | null = null,
   ): void {
     this.#db
       .prepare(
-        'INSERT OR REPLACE INTO model_dims (hash, x, y, z) VALUES (?, ?, ?, ?)',
+        'INSERT OR REPLACE INTO model_dims (hash, x, y, z, triangles) VALUES (?, ?, ?, ?, ?)',
       )
-      .run(hash, dims?.x ?? null, dims?.y ?? null, dims?.z ?? null)
+      .run(hash, dims?.x ?? null, dims?.y ?? null, dims?.z ?? null, triangles)
   }
 
   getSetting(key: string): string | undefined {

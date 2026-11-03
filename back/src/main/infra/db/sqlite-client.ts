@@ -65,7 +65,8 @@ CREATE TABLE IF NOT EXISTS model_dims (
   hash TEXT PRIMARY KEY, -- local : recalculable partout, inutile à synchroniser
   x REAL,
   y REAL,
-  z REAL
+  z REAL,
+  triangles INTEGER
 );
 CREATE TABLE IF NOT EXISTS model_about (
   hash TEXT PRIMARY KEY, -- local : lu dans le fichier et son pack, recalculable partout
@@ -103,7 +104,10 @@ const ADDED_COLUMNS: [string, string, string][] = [
   ['model_meta', 'sent_count', 'INTEGER'],
   ['model_meta', 'creator', 'TEXT'],
   ['model_meta', 'source_url', 'TEXT'],
+  ['model_dims', 'triangles', 'INTEGER'],
 ]
+// Tables de cache LOCALES vidées quand on leur ajoute une colonne : tout est recalculé en tâche de fond.
+const RECOMPUTED_TABLES = new Set(['model_dims'])
 
 const migrate = (db: DatabaseSync) => {
   for (const [table, column, type] of ADDED_COLUMNS) {
@@ -112,6 +116,9 @@ const migrate = (db: DatabaseSync) => {
     }[]
     if (!columns.some((c) => c.name === column)) {
       db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`)
+      if (RECOMPUTED_TABLES.has(table)) {
+        db.exec(`DELETE FROM ${table}`)
+      }
     }
   }
 }

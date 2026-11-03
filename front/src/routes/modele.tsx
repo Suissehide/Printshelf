@@ -23,6 +23,7 @@ import { TagInput } from '@/components/ui/tag-input.tsx'
 import { ModelViewer } from '@/components/viewer/model-viewer.tsx'
 import { useOpenInSlicer } from '@/hooks/useOpenInSlicer.ts'
 import { fitsOn, resolveSlicer } from '@/libs/library/slicer.ts'
+import { suggestTags } from '@/libs/library/tags.ts'
 import type { LoadedModel } from '@/libs/three/load-model.ts'
 import {
   useModels,
@@ -45,6 +46,7 @@ import {
 import type { Dimensions, Model } from '@/types/library.ts'
 import { cn } from '@/utils/cn.ts'
 import { formatDate, formatSize, sourceRelativeDir } from '@/utils/format.ts'
+import { shortcutAllowed } from '@/utils/keyboard.ts'
 
 export const Route = createFileRoute('/modele')({
   validateSearch: (raw: Record<string, unknown>) => ({
@@ -89,10 +91,10 @@ const ModelActions = ({ model }: { model: Model }) => {
   // Entrée : envoyer au slicer (hors saisie dans un champ).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const typing = (e.target as HTMLElement).closest(
-        'input, textarea, select, button',
-      )
-      if (e.key === 'Enter' && !typing) {
+      if (
+        e.key === 'Enter' &&
+        shortcutAllowed(e, 'input, textarea, select, button')
+      ) {
         e.preventDefault()
         void open([model], slicerId || null)
       }
@@ -407,6 +409,11 @@ function ModelPage() {
           <TagInput
             tags={model.tags}
             suggestions={allTags}
+            proposed={suggestTags(
+              model,
+              sources.find((src) => src.id === model.source_id)?.path,
+              allTags,
+            )}
             onChange={(tags) => meta.mutate({ hash: model.hash, tags })}
           />
         </Field>

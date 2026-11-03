@@ -10,7 +10,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts
 
 FROM ${MIRROR_URL}node:${NODE_VERSION}-slim AS app
-RUN apt-get update -qq && apt-get install -y --no-install-recommends dumb-init && rm -rf /var/lib/apt/lists/*
+RUN apt-get update -qq && apt-get install -y --no-install-recommends dumb-init libarchive-tools && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
 COPY --chown=node:node package.json tsconfig.json ./

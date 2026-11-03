@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { GCodeLoader } from 'three/examples/jsm/loaders/GCodeLoader.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js'
@@ -31,6 +32,25 @@ const meshFrom = (geometry: THREE.BufferGeometry, material: THREE.Material) => {
   return new THREE.Mesh(geometry, material)
 }
 
+// G-code : les déplacements d'extrusion seulement (les trajets à vide brouillent l'aperçu),
+// dans la couleur d'accent. Repère d'impression Z-haut, comme les autres formats.
+// ponytail: arcs G2/G3 ignorés par GCodeLoader (pièces arrondies en segments manquants) ; fichiers de
+// plusieurs centaines de Mo lents à afficher.
+const gcodeObject = (buffer: ArrayBuffer) => {
+  const object = new GCodeLoader().parse(new TextDecoder().decode(buffer))
+  object.rotation.set(0, 0, 0)
+  for (const child of [...object.children]) {
+    if (child instanceof THREE.LineSegments) {
+      if (child.material.name === 'path') {
+        object.remove(child)
+      } else {
+        child.material = new THREE.LineBasicMaterial({ color: '#ff8a3d' })
+      }
+    }
+  }
+  return object
+}
+
 const parse = async (
   ext: string,
   buffer: ArrayBuffer,
@@ -54,6 +74,14 @@ const parse = async (
       gltf.scene.rotation.x = Math.PI / 2
       return gltf.scene
     }
+    case 'step':
+    case 'stp': {
+      // Chargé à la demande : OpenCascade ne pèse dans le bundle que si un STEP est ouvert.
+      const { parseSTEP } = await import('./parse-step.ts')
+      return parseSTEP(buffer, material)
+    }
+    case 'gcode':
+      return gcodeObject(buffer)
     default:
       throw new Error(`Format non pris en charge : .${ext}`)
   }

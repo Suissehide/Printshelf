@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Archive, Copy, CopyCheck, FolderSearch } from 'lucide-react'
+import { Archive, Copy, CopyCheck, FolderSearch, Shapes } from 'lucide-react'
 import { useMemo } from 'react'
 
 import { Thumbnail } from '@/components/library/thumbnail.tsx'
@@ -83,6 +83,12 @@ const Row = ({
   )
 }
 
+const BADGES: Record<DuplicateGroup['kind'], string> = {
+  exact: 'Copie exacte',
+  geometry: 'Même géométrie',
+  probable: 'Doublon probable',
+}
+
 const Group = ({ group }: { group: DuplicateGroup }) => (
   <section className="overflow-hidden rounded-(--radius-card) border border-line bg-surface">
     <ul className="divide-y divide-line">
@@ -91,7 +97,7 @@ const Group = ({ group }: { group: DuplicateGroup }) => (
         <Row
           key={m.path}
           model={m}
-          badge={group.kind === 'exact' ? 'Copie exacte' : 'Doublon probable'}
+          badge={BADGES[group.kind]}
           tone={group.kind === 'exact' ? 'copy' : 'maybe'}
         />
       ))}
@@ -103,6 +109,7 @@ function DuplicatesPage() {
   const { models } = useModels()
   const groups = useMemo(() => findDuplicates(models), [models])
   const exact = groups.filter((g) => g.kind === 'exact')
+  const geometry = groups.filter((g) => g.kind === 'geometry')
   const probable = groups.filter((g) => g.kind === 'probable')
   const reclaimable = exact.reduce((s, g) => s + g.reclaimable, 0)
 
@@ -131,6 +138,19 @@ function DuplicatesPage() {
                 </span>
               </h2>
               {exact.map((g) => (
+                <Group key={g.key} group={g} />
+              ))}
+            </div>
+          )}
+          {geometry.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <h2 className="flex items-center gap-2 font-semibold">
+                <Shapes className="size-4 text-info" /> Même modèle
+                <span className="font-normal text-ink-mute">
+                  — même forme dans des fichiers différents (STL et 3MF…)
+                </span>
+              </h2>
+              {geometry.map((g) => (
                 <Group key={g.key} group={g} />
               ))}
             </div>

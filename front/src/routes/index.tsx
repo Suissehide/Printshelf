@@ -24,13 +24,14 @@ import {
 } from '@/queries/useOrganizer.ts'
 import type { Collection, Source } from '@/types/library.ts'
 import { baseName, plural } from '@/utils/format.ts'
+import { shortcutAllowed } from '@/utils/keyboard.ts'
 
 export const Route = createFileRoute('/')({
   validateSearch: validateLibrarySearch,
   component: LibraryPage,
 })
 
-const FORMATS = ['3mf', 'stl', 'obj', 'ply', 'glb']
+const FORMATS = ['3mf', 'stl', 'obj', 'ply', 'glb', 'step', 'gcode']
 const VIEW_TITLES: Record<NonNullable<LibrarySearch['view']>, string> = {
   sent: 'Envoyés au slicer',
   favorites: 'Favoris',
@@ -99,7 +100,7 @@ function LibraryPage() {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
         searchRef.current?.focus()
-      } else if (e.key === 'Escape') {
+      } else if (e.key === 'Escape' && shortcutAllowed(e, 'textarea')) {
         setSelection(new Set())
       }
     }
@@ -119,10 +120,11 @@ function LibraryPage() {
   // Entrée : la sélection part au slicer (hors saisie dans un champ).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const typing = (e.target as HTMLElement).closest(
-        'input, textarea, select',
-      )
-      if (e.key === 'Enter' && !typing && selectedModels.length > 0) {
+      if (
+        e.key === 'Enter' &&
+        shortcutAllowed(e) &&
+        selectedModels.length > 0
+      ) {
         e.preventDefault()
         void open(selectedModels)
       }

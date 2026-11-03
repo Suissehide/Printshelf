@@ -79,6 +79,7 @@ export const dimensionsSchema = z.object({
   x: z.number(),
   y: z.number(),
   z: z.number(),
+  triangles: z.number().nullable(),
 })
 
 export const aboutSchema = z.object({

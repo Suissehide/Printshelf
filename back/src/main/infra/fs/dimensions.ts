@@ -294,3 +294,48 @@ export const measureModel = (
       return null
   }
 }
+
+// Nombre de triangles. Avec les dimensions, c'est l'empreinte d'une géométrie : le même modèle
+// exporté en STL et en 3MF a un contenu (hash) différent mais la même empreinte.
+// ponytail: un 3MF compte chaque maillage une fois (copies posées non multipliées) ; suffisant pour
+// le cas courant d'un objet seul.
+export const countTriangles = async (
+  ext: string,
+  data: Buffer,
+): Promise<number | null> => {
+  const count = (text: string, pattern: RegExp) =>
+    text.match(pattern)?.length ?? 0
+  switch (ext) {
+    case 'stl': {
+      const binary = data.length >= 84 ? data.readUInt32LE(80) : -1
+      if (data.length === 84 + binary * 50) {
+        return binary
+      }
+      return count(data.toString('latin1'), /^\s*facet\b/gim) || null
+    }
+    case 'obj': {
+      let triangles = 0
+      for (const [, vertices] of data
+        .toString('latin1')
+        .matchAll(/^f\s+(.+)$/gm)) {
+        triangles += Math.max(0, vertices.trim().split(/\s+/).length - 2)
+      }
+      return triangles || null
+    }
+    case 'ply': {
+      const faces = data
+        .toString('latin1', 0, Math.min(data.length, 4096))
+        .match(/element face (\d+)/)
+      return faces ? Number(faces[1]) : null
+    }
+    case '3mf': {
+      let triangles = 0
+      for (const xml of (await readModelDocs(data)).values()) {
+        triangles += count(xml, /<triangle\b/g)
+      }
+      return triangles || null
+    }
+    default:
+      return null
+  }
+}

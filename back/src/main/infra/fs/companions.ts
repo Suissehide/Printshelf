@@ -97,7 +97,7 @@ export const diskCompanions = async (
 }
 
 export const archiveCompanions = (
-  entries: ZipEntry[],
+  entries: Pick<ZipEntry, 'name' | 'size'>[],
   entryName: string,
 ): { base: string; list: Companion[] } => {
   // Dans une archive, la racine est « . » : le parent de n'importe quel dossier y reste.

@@ -1,8 +1,8 @@
 import type {
   About,
   Companion,
-  Dimensions,
   FileRow,
+  Measured,
   PrintInfo,
   ScanStatus,
   Source,
@@ -20,8 +20,7 @@ export const LibraryApi = {
 
   getFiles: () => request<FileRow[]>('/files'),
   getAbout: () => request<(About & { hash: string })[]>('/about'),
-  getDimensions: () =>
-    request<(Dimensions & { hash: string })[]>('/dimensions'),
+  getDimensions: () => request<(Measured & { hash: string })[]>('/dimensions'),
   getContent: async (path: string): Promise<ArrayBuffer> => {
     const response = await fetch(`${API}/files/content?${pathQuery(path)}`)
     if (!response.ok) {

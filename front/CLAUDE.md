@@ -16,9 +16,11 @@ routes/                    # __root (barre latérale), index (bibliothèque), mo
 api/                       # appels HTTP, un fichier par domaine (http.ts : `request`, ApiError)
 queries/                   # hooks TanStack Query (useLibrary, useOrganizer, useSystem)
 components/{layout,library,viewer,ui}/
-libs/library/              # logique pure testée : filtres, doublons, slicer.ts (choix du slicer, tient
+libs/library/              # logique pure testée : filtres, doublons (exacts, même géométrie, même nom),
+                           # tags.ts (suggestions tirées du chemin), slicer.ts (choix du slicer, tient
                            # sur le plateau ?, imprimantes courantes)
-libs/three/                # parse-3mf (composants p:path Bambu), load-model, stage, thumbnail-queue,
+libs/three/                # parse-3mf (composants p:path Bambu), parse-step (OpenCascade WASM, chargé à
+                           # la demande), load-model (G-code compris), stage, thumbnail-queue,
                            # slicer-layout (couleurs de filament, plateau affiché)
 components/model/          # panneaux de la fiche modèle : impression (plateaux), créateur et source,
                            # fichiers joints
