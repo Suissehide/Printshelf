@@ -136,6 +136,7 @@ export const ModelGrid = ({
                     key={model.path}
                     model={model}
                     selected={selection.has(model.path)}
+                    selecting={selection.size > 0}
                     onOpen={() =>
                       navigate({ to: '/modele', search: { path: model.path } })
                     }

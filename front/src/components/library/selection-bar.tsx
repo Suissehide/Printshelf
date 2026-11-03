@@ -87,8 +87,17 @@ export const SelectionBar = ({
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-5 z-20 flex justify-center px-4">
       <div className="pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-line-strong bg-overlay p-1.5 pl-4 shadow-(--shadow-pop)">
-        <span className="mr-2 font-medium text-ink">
-          {plural(models.length, 'modèle sélectionné', 'modèles sélectionnés')}
+        <span className="mr-2 flex flex-col leading-tight">
+          <span className="font-medium text-ink">
+            {plural(
+              models.length,
+              'modèle sélectionné',
+              'modèles sélectionnés',
+            )}
+          </span>
+          <span className="text-[11px] text-ink-mute">
+            Clic : cocher · Maj-clic : une plage · Échap : fin
+          </span>
         </span>
         <select
           aria-label="Ajouter à une collection"

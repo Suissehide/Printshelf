@@ -17,6 +17,8 @@ import { Thumbnail } from './thumbnail.tsx'
 type ModelCardProps = {
   model: Model
   selected: boolean
+  // Une sélection est en cours : un clic sur la carte coche ou décoche au lieu d'ouvrir.
+  selecting: boolean
   desktop: boolean
   // Mesuré et trop grand pour toutes les imprimantes déclarées.
   oversized: boolean
@@ -59,6 +61,7 @@ const Action = ({
 export const ModelCard = ({
   model,
   selected,
+  selecting,
   desktop,
   oversized,
   onOpen,
@@ -76,7 +79,7 @@ export const ModelCard = ({
     draggable
     onDragStart={onDragStart}
     onClick={(e) =>
-      e.metaKey || e.ctrlKey || e.shiftKey ? onSelect(e) : onOpen()
+      selecting || e.metaKey || e.ctrlKey || e.shiftKey ? onSelect(e) : onOpen()
     }
     onKeyDown={(e) => e.key === 'Enter' && onOpen()}
     className={cn(
@@ -92,6 +95,30 @@ export const ModelCard = ({
     />
 
     <div className="absolute top-2 left-2 flex gap-1">
+      {/* Case à cocher : au survol, puis toujours visible pendant une sélection. */}
+      <label
+        title="Sélectionner (Maj-clic : toute une plage)"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+        className={cn(
+          'grid size-6 cursor-pointer place-items-center rounded-md bg-canvas/80 backdrop-blur transition-opacity',
+          selecting || selected
+            ? 'opacity-100'
+            : 'opacity-0 group-focus-within:opacity-100 group-hover:opacity-100',
+        )}
+      >
+        <input
+          type="checkbox"
+          checked={selected}
+          readOnly
+          aria-label={`Sélectionner ${model.name}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            onSelect(e)
+          }}
+          className="size-3.5 cursor-pointer accent-accent"
+        />
+      </label>
       {model.favorite && (
         <span className="grid size-6 place-items-center rounded-md bg-canvas/80 text-accent backdrop-blur">
           <Star className="size-3.5 fill-current" />
