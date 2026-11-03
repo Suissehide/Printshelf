@@ -133,6 +133,8 @@ Puis :
 
 Printshelf s'ouvre sur **http://localhost:4747**. Ajoutez vos dossiers dans **Réglages → Sources** : c'est
 tout. Au premier lancement, les dépendances s'installent et l'interface est construite (une à deux minutes).
+Après un `git pull`, relancez simplement : le lanceur reconstruit l'interface (en terminal, refaites les
+deux commandes).
 
 ### Formats
 
