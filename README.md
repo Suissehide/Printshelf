@@ -125,6 +125,8 @@ Puis :
 
 - **macOS** : double-cliquez sur `start.command`.
 - **Windows** : double-cliquez sur `start.bat`.
+  Pour une icône sur le Bureau, lancez une fois `windows/creer-raccourci.bat` : le raccourci « Printshelf »
+  peut aussi être épinglé à la barre des tâches.
 - **Linux / terminal** :
   ```shell
   npm --prefix back install && npm --prefix front install && npm --prefix front run build

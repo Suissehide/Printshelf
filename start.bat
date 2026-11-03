@@ -1,4 +1,5 @@
 @echo off
+title Printshelf
 rem Lanceur Windows : double-cliquer. Met a jour dependances et interface (utile apres un git pull),
 rem puis ouvre Printshelf. Quelques secondes quand rien n'a change.
 cd /d "%~dp0"
