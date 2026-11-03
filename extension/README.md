@@ -15,7 +15,14 @@ Les archives ZIP sont importées telles quelles : chaque modèle qu'elles contie
 
 - **Chrome, Edge, Brave** : `chrome://extensions` → activer le *mode développeur* → *Charger l'extension non
   empaquetée* → choisir ce dossier `extension/`.
-- **Firefox** (121+) : `about:debugging` → *Ce Firefox* → *Charger un module temporaire* → `manifest.json`.
+- **Firefox** (121+) ne gère pas encore les service workers d'extension : il a son propre manifeste,
+  `manifest.firefox.json`. Préparez une copie depuis ce dossier :
+
+  ```bash
+  rm -rf ../extension-firefox && cp -R . ../extension-firefox && mv ../extension-firefox/manifest.firefox.json ../extension-firefox/manifest.json
+  ```
+
+  puis `about:debugging` → *Ce Firefox* → *Charger un module temporaire* → `extension-firefox/manifest.json`.
 
 Printshelf doit être lancé (http://localhost:4747 par défaut, modifiable dans la fenêtre de l'extension).
 Le dossier d'import se règle dans **Printshelf → Réglages → Extension de navigateur** ; par défaut,

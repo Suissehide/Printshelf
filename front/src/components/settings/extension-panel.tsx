@@ -56,7 +56,9 @@ export const ExtensionPanel = () => {
         <li>
           Firefox : <code className="font-mono">about:debugging</code> →{' '}
           <em>Ce Firefox</em> → <em>Charger un module temporaire</em> →{' '}
-          <code className="font-mono">extension/manifest.json</code>.
+          <code className="font-mono">manifest.json</code> d'une copie préparée
+          avec <code className="font-mono">manifest.firefox.json</code> (voir{' '}
+          <code className="font-mono">extension/README.md</code>).
         </li>
         <li>Laissez Printshelf ouvert pendant vos téléchargements.</li>
       </ol>
