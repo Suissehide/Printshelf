@@ -160,5 +160,11 @@ export const useSourceMutations = () => {
       onSuccess: refresh,
       onError: toastError,
     }),
+    // Les images déjà affichées vivent dans la page : on la recharge pour tout redemander.
+    resetThumbnails: useMutation({
+      mutationFn: LibraryApi.resetThumbnails,
+      onSuccess: () => window.location.reload(),
+      onError: toastError,
+    }),
   }
 }

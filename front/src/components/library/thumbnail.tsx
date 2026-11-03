@@ -1,5 +1,5 @@
 import { Box } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { LibraryApi } from '@/api/library.api.ts'
 import { requestThumbnail } from '@/libs/three/thumbnail-queue.ts'
@@ -21,6 +21,8 @@ export const Thumbnail = ({
 }) => {
   const [src, setSrc] = useState(() => LibraryApi.thumbnailUrl(hash, path))
   const [state, setState] = useState<State>('loading')
+  const current = useRef(hash)
+  current.current = hash
 
   useEffect(() => {
     setSrc(LibraryApi.thumbnailUrl(hash, path))
@@ -48,7 +50,11 @@ export const Thumbnail = ({
       setState('failed')
       return
     }
+    const requested = hash
     void requestThumbnail(hash, path, ext).then((url) => {
+      if (current.current !== requested) {
+        return // le composant affiche déjà un autre modèle
+      }
       if (url) {
         setSrc(url)
       } else {

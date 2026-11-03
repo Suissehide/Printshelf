@@ -194,6 +194,12 @@ export const libraryRouter: FastifyPluginCallbackZod = (
     },
   )
 
+  fastify.post(
+    '/thumbnails/reset',
+    { schema: { response: { 200: z.object({ removed: z.number() }) } } },
+    async () => ({ removed: await libraryDomain.resetThumbnails() }),
+  )
+
   fastify.put(
     '/thumbnails/:hash',
     { schema: { params: thumbnailParamsSchema } },

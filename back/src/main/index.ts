@@ -13,3 +13,7 @@ container.logger.info(
 container.syncDomain.start()
 container.libraryDomain.startScan()
 container.libraryDomain.watchSources()
+const purged = await container.libraryDomain.purgeDuplicateThumbnailsOnce()
+if (purged) {
+  container.logger.info({ purged }, 'Miniatures suspectes supprimées')
+}

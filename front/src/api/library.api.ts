@@ -40,6 +40,11 @@ export const LibraryApi = {
   downloadUrl: (path: string) => `${API}/files/download?${pathQuery(path)}`,
   thumbnailUrl: (hash: string, path: string) =>
     `${API}/thumbnails/${hash}?${pathQuery(path)}`,
+  resetThumbnails: () =>
+    request<{ removed: number }>('/thumbnails/reset', {
+      method: 'POST',
+      json: {},
+    }),
   putThumbnail: (hash: string, png: Blob) =>
     request(`/thumbnails/${hash}`, {
       method: 'PUT',

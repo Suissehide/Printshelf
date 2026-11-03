@@ -4,6 +4,7 @@ import {
   Download,
   FolderOpen,
   FolderPlus,
+  ImageOff,
   Laptop,
   RefreshCw,
   Trash2,
@@ -41,7 +42,8 @@ function SourcesPanel() {
   const { data: sources = [] } = useSourcesQuery()
   const { data: scan } = useScanQuery()
   const { models } = useModels()
-  const { addSource, removeSource, startScan } = useSourceMutations()
+  const { addSource, removeSource, startScan, resetThumbnails } =
+    useSourceMutations()
   const scanLabel = scan?.running
     ? `${scan.processed.toLocaleString('fr-FR')} fichiers parcourus`
     : `Dernier scan ${formatRelative(scan?.lastFinishedAt ?? null)}${scan?.errors ? ` · ${scan.errors} fichier(s) illisible(s)` : ''}`
@@ -114,6 +116,18 @@ function SourcesPanel() {
         >
           <RefreshCw className={scan?.running ? 'animate-spin' : ''} />{' '}
           {scan?.running ? 'Scan en cours…' : 'Rescanner'}
+        </Button>
+        <Button
+          size="sm"
+          onClick={async () =>
+            (await confirmDialog('Régénérer toutes les miniatures ?', {
+              message:
+                'Le cache est vidé : chaque miniature est relue dans son fichier ou redessinée à l’affichage. Utile si un aperçu ne correspond pas à son modèle.',
+              confirmLabel: 'Régénérer',
+            })) && resetThumbnails.mutate()
+          }
+        >
+          <ImageOff /> Régénérer les miniatures
         </Button>
         {scanLabel}
       </div>

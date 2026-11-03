@@ -640,6 +640,39 @@ export class LibraryDomain {
     return png
   }
 
+  // Vide le cache : chaque miniature sera relue dans le fichier ou rendue de nouveau à l'affichage.
+  async resetThumbnails(): Promise<number> {
+    const names = await fs.readdir(this.#thumbsDir).catch(() => [])
+    await fs.rm(this.#thumbsDir, { recursive: true, force: true })
+    return names.length
+  }
+
+  // Avant la gestion de la perte du contexte 3D (onglet en arrière-plan), un rendu raté renvoyait
+  // l'image du modèle PRÉCÉDENT, enregistrée sous le mauvais hash. Signature : la même image, octet
+  // pour octet, pour des contenus différents. Supprimées une seule fois ; elles seront refaites.
+  async purgeDuplicateThumbnailsOnce(): Promise<number> {
+    if (this.#files.getSetting('thumbs_purged_v1')) {
+      return 0
+    }
+    const byImage = new Map<string, string[]>()
+    for (const name of await fs.readdir(this.#thumbsDir).catch(() => [])) {
+      const data = await fs.readFile(path.join(this.#thumbsDir, name))
+      const key = sha1(data)
+      byImage.set(key, [...(byImage.get(key) ?? []), name])
+    }
+    let removed = 0
+    for (const names of byImage.values()) {
+      if (names.length > 1) {
+        for (const name of names) {
+          await fs.rm(path.join(this.#thumbsDir, name), { force: true })
+          removed++
+        }
+      }
+    }
+    this.#files.setSetting('thumbs_purged_v1', String(Date.now()))
+    return removed
+  }
+
   async putThumbnail(hash: string, png: Buffer): Promise<void> {
     if (!HASH_PATTERN.test(hash) || !this.#files.hasHash(hash)) {
       throw Boom.notFound('Modèle inconnu')

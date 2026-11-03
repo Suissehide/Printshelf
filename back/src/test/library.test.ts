@@ -179,6 +179,33 @@ describe('bibliothèque', () => {
     ).rejects.toThrow(/archive/)
   })
 
+  it('purge une fois les miniatures identiques pour des contenus différents', async () => {
+    current = await makeLibrary()
+    await fs.writeFile(path.join(current.source, 'a.stl'), STL)
+    await fs.writeFile(path.join(current.source, 'b.stl'), `${STL}\n`)
+    await fs.writeFile(path.join(current.source, 'c.stl'), `${STL}\n\n`)
+    await scanned(current)
+    const library = current.app.libraryDomain
+    const hashOf = (name: string) =>
+      library.getFile(path.join(current?.source ?? '', name)).hash
+    const png = (text: string) => Buffer.from(`\x89PNG ${text}`)
+    await library.putThumbnail(hashOf('a.stl'), png('a'))
+    await library.putThumbnail(hashOf('b.stl'), png('a')) // l'image de a, enregistrée pour b
+    await library.putThumbnail(hashOf('c.stl'), png('c'))
+
+    expect(await library.purgeDuplicateThumbnailsOnce()).toBe(2)
+    expect(await library.getThumbnail(hashOf('a.stl'))).toBeNull()
+    expect(await library.getThumbnail(hashOf('b.stl'))).toBeNull()
+    expect((await library.getThumbnail(hashOf('c.stl')))?.toString()).toContain(
+      'c',
+    )
+
+    await library.putThumbnail(hashOf('a.stl'), png('c'))
+    expect(await library.purgeDuplicateThumbnailsOnce()).toBe(0) // une seule fois
+    expect(await library.resetThumbnails()).toBe(2)
+    expect(await library.getThumbnail(hashOf('c.stl'))).toBeNull()
+  })
+
   it('lit les infos d’impression et la miniature d’un plateau', async () => {
     current = await makeLibrary()
     await scanned(current)
