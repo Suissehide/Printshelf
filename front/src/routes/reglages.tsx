@@ -18,6 +18,7 @@ import { Panel } from '@/components/settings/panel.tsx'
 import { PrintersPanel } from '@/components/settings/printers-panel.tsx'
 import { SlicersPanel } from '@/components/settings/slicers-panel.tsx'
 import { Button } from '@/components/ui/button.tsx'
+import { confirmDialog } from '@/components/ui/dialog.tsx'
 import { PageHeader } from '@/components/ui/page-header.tsx'
 import { toastError } from '@/hooks/useToast.ts'
 import {
@@ -84,10 +85,12 @@ function SourcesPanel() {
             size="icon"
             variant="danger"
             aria-label={`Retirer ${s.path}`}
-            onClick={() =>
-              window.confirm(
-                `Retirer « ${s.path} » de la bibliothèque ? Aucun fichier ne sera supprimé.`,
-              ) && removeSource.mutate(s.id)
+            onClick={async () =>
+              (await confirmDialog('Retirer ce dossier de la bibliothèque ?', {
+                message: `${s.path} — aucun fichier ne sera supprimé.`,
+                confirmLabel: 'Retirer',
+                danger: true,
+              })) && removeSource.mutate(s.id)
             }
           >
             <Trash2 />

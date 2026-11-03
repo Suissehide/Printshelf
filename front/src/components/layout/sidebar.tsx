@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { type ReactNode, useMemo } from 'react'
 
+import { promptDialog } from '@/components/ui/dialog.tsx'
 import { findDuplicates } from '@/libs/library/duplicates.ts'
 import type { LibrarySearch } from '@/libs/library/filters.ts'
 import {
@@ -138,8 +139,11 @@ export const Sidebar = () => {
     !search.tag &&
     search.source === undefined
 
-  const newCollection = () => {
-    const name = window.prompt('Nom de la nouvelle collection')?.trim()
+  const newCollection = async () => {
+    const name = await promptDialog('Nouvelle collection', {
+      placeholder: 'Nom de la collection',
+      confirmLabel: 'Créer',
+    })
     if (name) {
       create.mutate({
         name,

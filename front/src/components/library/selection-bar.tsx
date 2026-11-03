@@ -1,6 +1,7 @@
 import { Download, ListPlus, Send, Star, Tag, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button.tsx'
+import { promptDialog } from '@/components/ui/dialog.tsx'
 import { useOpenInSlicer } from '@/hooks/useOpenInSlicer.ts'
 import {
   useCollectionMutations,
@@ -26,11 +27,13 @@ export const SelectionBar = ({
   const { open, desktop } = useOpenInSlicer()
   const hashes = [...new Set(models.map((m) => m.hash))]
 
-  const addTag = () => {
-    const tag = window
-      .prompt('Tag à ajouter aux modèles sélectionnés')
-      ?.trim()
-      .toLowerCase()
+  const addTag = async () => {
+    const tag = (
+      await promptDialog(
+        `Ajouter un tag à ${plural(models.length, 'modèle')}`,
+        { placeholder: 'ex. figurine', confirmLabel: 'Ajouter' },
+      )
+    )?.toLowerCase()
     if (tag) {
       for (const m of models) {
         meta.mutate({ hash: m.hash, tags: [...new Set([...m.tags, tag])] })
