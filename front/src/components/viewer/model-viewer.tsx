@@ -1,4 +1,11 @@
-import { Camera, Grid3x3, Loader2, Rotate3d, Shapes } from 'lucide-react'
+import {
+  Camera,
+  Grid3x3,
+  Loader2,
+  Rotate3d,
+  Shapes,
+  Undo2,
+} from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
@@ -33,6 +40,16 @@ const COLORS = [
   '#f472b6',
   '#2a2b30',
 ]
+const COLOR_KEY = 'printshelf.viewerColor'
+
+// Couleur d'aperçu mémorisée ; null : couleurs d'origine du fichier (projet du slicer, GLB…).
+const readColor = () => {
+  try {
+    return localStorage.getItem(COLOR_KEY)
+  } catch {
+    return null
+  }
+}
 
 type Stage = {
   renderer: THREE.WebGLRenderer
@@ -109,7 +126,7 @@ export const ModelViewer = ({
   const [autoRotate, setAutoRotate] = useState(false)
   const [wireframe, setWireframe] = useState(false)
   const [showGrid, setShowGrid] = useState(true)
-  const [color, setColor] = useState(COLORS[0])
+  const [color, setColor] = useState<string | null>(readColor)
   const onLoadedRef = useRef(onLoaded)
   onLoadedRef.current = onLoaded
 
@@ -204,25 +221,47 @@ export const ModelViewer = ({
     setView('iso')
   }, [status, printInfo, plate])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: printInfo repeint le modèle (effet ci-dessus), la couleur choisie doit repasser dessus
   useEffect(() => {
     const stage = stageRef.current
     if (stage && status === 'ready') {
       stage.controls.autoRotate = autoRotate
       stage.grid.visible = showGrid
-      stage.material.color.set(color)
+      stage.material.color.set(color ?? COLORS[0])
+      // Une couleur choisie recouvre tout le modèle ; chaque maillage garde son matériau d'origine
+      // (couleurs du projet, peintes plus tôt selon `printInfo`) pour pouvoir y revenir.
       stage.object?.traverse((child) => {
         if (child instanceof THREE.Mesh) {
+          if (child.material !== stage.material) {
+            child.userData.ownMaterial = child.material
+          }
+          child.material = color
+            ? stage.material
+            : (child.userData.ownMaterial ?? stage.material)
           ;(child.material as THREE.MeshStandardMaterial).wireframe = wireframe
         }
       })
     }
-  }, [autoRotate, showGrid, wireframe, color, status])
+  }, [autoRotate, showGrid, wireframe, color, status, printInfo])
 
   const applyView = (next: ViewName) => {
     setView(next)
     const stage = stageRef.current
     if (stage?.object) {
       frameObject(stage.camera, stage.object, next, stage.controls.target)
+    }
+  }
+
+  const changeColor = (next: string | null) => {
+    setColor(next)
+    try {
+      if (next) {
+        localStorage.setItem(COLOR_KEY, next)
+      } else {
+        localStorage.removeItem(COLOR_KEY)
+      }
+    } catch {
+      // stockage indisponible (navigation privée) : la couleur reste celle de la session
     }
   }
 
@@ -290,12 +329,25 @@ export const ModelViewer = ({
       </div>
 
       <div className="absolute bottom-4 left-4 flex items-center gap-1.5 rounded-xl border border-line bg-surface/90 p-1.5 backdrop-blur">
+        <button
+          type="button"
+          title="Couleurs d'origine"
+          aria-label="Couleurs d'origine"
+          aria-pressed={!color}
+          onClick={() => changeColor(null)}
+          className={cn(
+            'grid size-5 place-items-center rounded-full text-ink-soft hover:text-ink [&_svg]:size-3.5',
+            !color && 'ring-2 ring-accent ring-offset-2 ring-offset-surface',
+          )}
+        >
+          <Undo2 />
+        </button>
         {COLORS.map((c) => (
           <button
             key={c}
             type="button"
             aria-label={`Couleur ${c}`}
-            onClick={() => setColor(c)}
+            onClick={() => changeColor(c)}
             className={cn(
               'size-5 rounded-full border border-white/10',
               color === c &&
@@ -304,6 +356,19 @@ export const ModelViewer = ({
             style={{ background: c }}
           />
         ))}
+        <input
+          type="color"
+          title="Couleur personnalisée"
+          aria-label="Couleur personnalisée"
+          value={color ?? COLORS[0]}
+          onChange={(e) => changeColor(e.target.value)}
+          className={cn(
+            'size-5 rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-white/10',
+            color &&
+              !COLORS.includes(color) &&
+              'ring-2 ring-accent ring-offset-2 ring-offset-surface',
+          )}
+        />
       </div>
       <p className="absolute right-4 bottom-4 hidden text-xs text-ink-mute md:block">
         glisser : pivoter · clic droit : déplacer · molette : zoom
