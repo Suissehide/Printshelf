@@ -6,6 +6,7 @@ import { ModelGrid } from '@/components/library/model-grid.tsx'
 import { SelectionBar } from '@/components/library/selection-bar.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { EmptyState } from '@/components/ui/empty-state.tsx'
+import { Segment } from '@/components/ui/segment.tsx'
 import { useOpenInSlicer } from '@/hooks/useOpenInSlicer.ts'
 import {
   filterModels,
@@ -22,7 +23,6 @@ import {
   usePreferencesQuery,
 } from '@/queries/useOrganizer.ts'
 import type { Collection, Source } from '@/types/library.ts'
-import { cn } from '@/utils/cn.ts'
 import { baseName, plural } from '@/utils/format.ts'
 
 export const Route = createFileRoute('/')({
@@ -260,17 +260,14 @@ function LibraryFilters({
     <div className="flex flex-wrap items-center gap-2">
       <div className="flex items-center gap-0.5 rounded-lg border border-line bg-surface p-0.5">
         {['', ...FORMATS].map((fmt) => (
-          <button
+          <Segment
             key={fmt || 'all'}
-            type="button"
+            active={(search.fmt ?? '') === fmt}
             onClick={() => setSearch({ fmt: fmt || undefined })}
-            className={cn(
-              'h-7 rounded-md px-2.5 font-mono text-[11px] tracking-wide text-ink-mute uppercase hover:text-ink',
-              (search.fmt ?? '') === fmt && 'bg-raised text-ink',
-            )}
+            className="font-mono text-[11px] tracking-wide uppercase"
           >
             {fmt || 'Tous'}
-          </button>
+          </Segment>
         ))}
       </div>
 

@@ -1,6 +1,8 @@
 import { X } from 'lucide-react'
 import { type KeyboardEvent, useState } from 'react'
 
+import { Button } from '@/components/ui/button.tsx'
+
 type TagInputProps = {
   tags: string[]
   suggestions: string[]
@@ -37,14 +39,15 @@ export const TagInput = ({ tags, suggestions, onChange }: TagInputProps) => {
           className="inline-flex items-center gap-1 rounded-md bg-raised py-0.5 pr-1 pl-2 text-xs text-ink"
         >
           {tag}
-          <button
-            type="button"
+          <Button
+            size="xs"
+            variant="ghost"
             aria-label={`Retirer le tag ${tag}`}
-            className="rounded p-0.5 text-ink-mute hover:text-ink"
+            className="size-4 [&_svg]:size-3"
             onClick={() => onChange(tags.filter((t) => t !== tag))}
           >
-            <X className="size-3" />
-          </button>
+            <X />
+          </Button>
         </span>
       ))}
       <input

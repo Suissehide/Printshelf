@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
+import { Segment } from '@/components/ui/segment.tsx'
 import {
   createModelMaterial,
   type LoadedModel,
@@ -252,17 +253,14 @@ export const ModelViewer = ({
 
       <div className="absolute top-4 left-1/2 flex -translate-x-1/2 items-center gap-0.5 rounded-xl border border-line bg-surface/90 p-1 backdrop-blur">
         {VIEW_LABELS.map(([key, label]) => (
-          <button
+          <Segment
             key={key}
-            type="button"
+            active={view === key}
             onClick={() => applyView(key)}
-            className={cn(
-              'h-8 rounded-lg px-3 text-ink-soft hover:text-ink',
-              view === key && 'bg-overlay text-ink',
-            )}
+            className="h-8 rounded-lg px-3 text-ink-soft aria-pressed:bg-overlay"
           >
             {label}
-          </button>
+          </Segment>
         ))}
         <span className="mx-1 h-5 w-px bg-line" />
         <Tool

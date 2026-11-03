@@ -13,6 +13,7 @@ const SIZES = {
   sm: 'h-7 px-2.5 text-xs gap-1.5 rounded-md',
   md: 'h-8.5 px-3 gap-2 rounded-lg',
   icon: 'size-8 justify-center rounded-lg',
+  xs: 'size-5 justify-center rounded [&_svg]:size-3.5',
 }
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {

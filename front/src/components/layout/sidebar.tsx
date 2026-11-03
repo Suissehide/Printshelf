@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { type ReactNode, useMemo } from 'react'
 
+import { Button } from '@/components/ui/button.tsx'
 import { promptDialog } from '@/components/ui/dialog.tsx'
 import { findDuplicates } from '@/libs/library/duplicates.ts'
 import type { LibrarySearch } from '@/libs/library/filters.ts'
@@ -228,14 +229,15 @@ export const Sidebar = () => {
         <Section
           title="Collections"
           action={
-            <button
-              type="button"
+            <Button
+              size="xs"
+              variant="ghost"
               onClick={newCollection}
               aria-label="Nouvelle collection"
-              className="rounded p-0.5 text-ink-mute hover:text-accent"
+              className="hover:text-accent"
             >
-              <Plus className="size-3.5" />
-            </button>
+              <Plus />
+            </Button>
           }
         >
           {collections.length === 0 && (

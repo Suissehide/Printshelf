@@ -333,23 +333,20 @@ function ModelPage() {
             <h1 className="flex-1 text-lg leading-snug font-semibold break-words">
               {model.name}
             </h1>
-            <button
-              type="button"
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-pressed={model.favorite}
               aria-label={
                 model.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'
               }
               onClick={() =>
                 meta.mutate({ hash: model.hash, favorite: !model.favorite })
               }
-              className={cn(
-                'rounded-lg p-1.5 text-ink-mute hover:bg-raised hover:text-ink',
-                model.favorite && 'text-accent hover:text-accent',
-              )}
+              className="[&_svg]:size-5 aria-pressed:text-accent"
             >
-              <Star
-                className={cn('size-5', model.favorite && 'fill-current')}
-              />
-            </button>
+              <Star className={cn(model.favorite && 'fill-current')} />
+            </Button>
           </div>
           <p
             className="mt-1 text-xs break-words text-ink-mute"
