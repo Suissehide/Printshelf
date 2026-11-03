@@ -27,6 +27,22 @@ export const Thumbnail = ({
     setState('loading')
   }, [hash, path])
 
+  // Un rendu raté (onglet en arrière-plan, contexte 3D perdu) se retente au retour sur l'onglet,
+  // sans avoir à recharger la page.
+  useEffect(() => {
+    if (state !== 'failed') {
+      return
+    }
+    const retry = () => {
+      if (!document.hidden) {
+        setSrc(LibraryApi.thumbnailUrl(hash, path))
+        setState('loading')
+      }
+    }
+    document.addEventListener('visibilitychange', retry)
+    return () => document.removeEventListener('visibilitychange', retry)
+  }, [state, hash, path])
+
   const onError = () => {
     if (src.startsWith('blob:')) {
       setState('failed')

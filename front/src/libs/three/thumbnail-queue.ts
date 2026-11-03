@@ -19,7 +19,14 @@ type Job = {
 const pending = new Map<string, Job>()
 let running = false
 
+// Un onglet en arrière-plan peut perdre son contexte WebGL (Safari le libère, Chrome sous pression
+// mémoire) : un rendu fait alors donne une image vide ou rien. On recrée le contexte s'il est perdu,
+// et on attend que l'onglet soit visible pour rendre.
 const getRenderer = () => {
+  if (renderer?.getContext().isContextLost()) {
+    renderer.dispose()
+    renderer = undefined
+  }
   if (!renderer) {
     renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -30,6 +37,34 @@ const getRenderer = () => {
     renderer.outputColorSpace = THREE.SRGBColorSpace
   }
   return renderer
+}
+
+const whenVisible = () =>
+  new Promise<void>((resolve) => {
+    if (!document.hidden) {
+      resolve()
+      return
+    }
+    const onChange = () => {
+      if (!document.hidden) {
+        document.removeEventListener('visibilitychange', onChange)
+        resolve()
+      }
+    }
+    document.addEventListener('visibilitychange', onChange)
+  })
+
+// Rendu en PNG ; null si le contexte a été perdu pendant le rendu (une seconde tentative suit).
+const snapshot = async (scene: THREE.Scene, camera: THREE.Camera) => {
+  await whenVisible()
+  const r = getRenderer()
+  r.render(scene, camera)
+  if (r.getContext().isContextLost()) {
+    return null
+  }
+  return new Promise<Blob | null>((resolve) =>
+    r.domElement.toBlob(resolve, 'image/png'),
+  )
 }
 
 const render = async (
@@ -43,11 +78,8 @@ const render = async (
     scene.add(object)
     const camera = new THREE.PerspectiveCamera(30, 1)
     frameObject(camera, object)
-    const r = getRenderer()
-    r.render(scene, camera)
-    const blob = await new Promise<Blob | null>((resolve) =>
-      r.domElement.toBlob(resolve, 'image/png'),
-    )
+    const blob =
+      (await snapshot(scene, camera)) ?? (await snapshot(scene, camera))
     if (!blob) {
       return null
     }
