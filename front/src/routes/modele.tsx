@@ -249,6 +249,16 @@ const CompanionsSection = ({ path }: { path: string }) => (
   </section>
 )
 
+// Mesure du back (par objet pour un projet à plusieurs plateaux), sinon la scène.
+const dimsLabel = (model: Model, loaded: LoadedModel | null) => {
+  if (model.dims) {
+    return `${mm(model.dims.x)} × ${mm(model.dims.y)} × ${mm(model.dims.z)}`
+  }
+  return loaded
+    ? `${mm(loaded.size.x)} × ${mm(loaded.size.z)} × ${mm(loaded.size.y)}`
+    : '…'
+}
+
 function ModelPage() {
   const { path } = Route.useSearch()
   const router = useRouter()
@@ -358,17 +368,7 @@ function ModelPage() {
         <ModelActions model={model} />
 
         <div className="grid grid-cols-2 gap-2">
-          <Stat
-            label="Dimensions (mm)"
-            value={
-              // Mesure du back (par objet pour un projet à plusieurs plateaux), sinon la scène.
-              model.dims
-                ? `${mm(model.dims.x)} × ${mm(model.dims.y)} × ${mm(model.dims.z)}`
-                : loaded
-                  ? `${mm(loaded.size.x)} × ${mm(loaded.size.z)} × ${mm(loaded.size.y)}`
-                  : '…'
-            }
-          />
+          <Stat label="Dimensions (mm)" value={dimsLabel(model, loaded)} />
           <Stat
             label="Triangles"
             value={

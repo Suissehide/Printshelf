@@ -35,6 +35,35 @@ const FromFile = () => (
   <span className="text-[10.5px] text-ink-mute">lu dans le fichier</span>
 )
 
+type SourcePatch = { creator?: string; sourceUrl?: string }
+
+const isChange = (patch: SourcePatch, saved?: SourcePatch | null) =>
+  (patch.creator !== undefined && patch.creator !== (saved?.creator ?? '')) ||
+  (patch.sourceUrl !== undefined &&
+    patch.sourceUrl !== (saved?.sourceUrl ?? ''))
+
+// Licence et description lues dans le fichier.
+const AboutExtras = ({ about }: { about: NonNullable<Model['about']> }) => (
+  <>
+    {about.license && (
+      <p className="inline-flex items-center gap-1.5 text-xs text-ink-soft">
+        <Scale className="size-3.5 text-ink-mute" /> Licence : {about.license}
+      </p>
+    )}
+    {about.description && (
+      <details className="group rounded-lg border border-line bg-surface px-3 py-2 text-xs">
+        <summary className="flex cursor-pointer items-center gap-1.5 text-ink-soft select-none">
+          <FileText className="size-3.5 text-ink-mute" /> Description du
+          créateur
+        </summary>
+        <p className="mt-2 whitespace-pre-line text-ink-soft">
+          {about.description}
+        </p>
+      </details>
+    )}
+  </>
+)
+
 // Créateur, lien d'origine, licence et description. Ce que l'utilisateur saisit (synchronisé)
 // prime sur ce qui est lu dans le 3MF ou le readme du pack, affiché en indication.
 // À monter avec `key={model.path}` : les brouillons repartent de zéro à chaque modèle.
@@ -48,13 +77,8 @@ export const SourcePanel = ({ model }: { model: Model }) => {
   const site = effectiveUrl ? siteName(effectiveUrl) : null
   const urlInvalid = url.trim() !== '' && !siteName(url.trim())
 
-  const commit = (patch: { creator?: string; sourceUrl?: string }) => {
-    const changed =
-      (patch.creator !== undefined &&
-        patch.creator !== (meta?.creator ?? '')) ||
-      (patch.sourceUrl !== undefined &&
-        patch.sourceUrl !== (meta?.sourceUrl ?? ''))
-    if (changed) {
+  const commit = (patch: SourcePatch) => {
+    if (isChange(patch, meta)) {
       save.mutate({ hash: model.hash, ...patch })
     }
   }
@@ -120,22 +144,7 @@ export const SourcePanel = ({ model }: { model: Model }) => {
         </a>
       )}
 
-      {about?.license && (
-        <p className="inline-flex items-center gap-1.5 text-xs text-ink-soft">
-          <Scale className="size-3.5 text-ink-mute" /> Licence : {about.license}
-        </p>
-      )}
-      {about?.description && (
-        <details className="group rounded-lg border border-line bg-surface px-3 py-2 text-xs">
-          <summary className="flex cursor-pointer items-center gap-1.5 text-ink-soft select-none">
-            <FileText className="size-3.5 text-ink-mute" /> Description du
-            créateur
-          </summary>
-          <p className="mt-2 whitespace-pre-line text-ink-soft">
-            {about.description}
-          </p>
-        </details>
-      )}
+      {about && <AboutExtras about={about} />}
     </div>
   )
 }
