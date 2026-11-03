@@ -1,7 +1,14 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { type MouseEvent, useEffect, useRef, useState } from 'react'
+import {
+  type DragEvent,
+  type MouseEvent,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 
+import { MODEL_HASHES_DRAG_TYPE } from '@/constants/drag.ts'
 import { useOpenInSlicer } from '@/hooks/useOpenInSlicer.ts'
 import { fitsOn } from '@/libs/library/slicer.ts'
 import {
@@ -92,6 +99,18 @@ export const ModelGrid = ({
     onSelectionChange(next)
   }
 
+  // Glisser une carte sélectionnée emporte toute la sélection (visible), sinon la carte seule.
+  const dragStart = (model: Model, event: DragEvent) => {
+    const dragged = selection.has(model.path)
+      ? models.filter((m) => selection.has(m.path))
+      : [model]
+    event.dataTransfer.effectAllowed = 'copy'
+    event.dataTransfer.setData(
+      MODEL_HASHES_DRAG_TYPE,
+      JSON.stringify([...new Set(dragged.map((m) => m.hash))]),
+    )
+  }
+
   return (
     <div ref={parentRef} className="h-full overflow-y-auto">
       <div
@@ -121,6 +140,7 @@ export const ModelGrid = ({
                       navigate({ to: '/modele', search: { path: model.path } })
                     }
                     onSelect={(e) => select(index, e)}
+                    onDragStart={(e) => dragStart(model, e)}
                     onToggleFavorite={() =>
                       favorite.mutate({
                         hash: model.hash,

@@ -7,7 +7,7 @@ import {
   Maximize2,
   Star,
 } from 'lucide-react'
-import type { MouseEvent } from 'react'
+import type { DragEvent, MouseEvent } from 'react'
 
 import type { Model } from '@/types/library.ts'
 import { cn } from '@/utils/cn.ts'
@@ -22,6 +22,7 @@ type ModelCardProps = {
   oversized: boolean
   onOpen: () => void
   onSelect: (event: MouseEvent) => void
+  onDragStart: (event: DragEvent) => void
   onToggleFavorite: () => void
   onQueue: () => void
   onSlicer: () => void
@@ -62,6 +63,7 @@ export const ModelCard = ({
   oversized,
   onOpen,
   onSelect,
+  onDragStart,
   onToggleFavorite,
   onQueue,
   onSlicer,
@@ -71,6 +73,8 @@ export const ModelCard = ({
     role="button"
     tabIndex={0}
     aria-pressed={selected}
+    draggable
+    onDragStart={onDragStart}
     onClick={(e) =>
       e.metaKey || e.ctrlKey || e.shiftKey ? onSelect(e) : onOpen()
     }

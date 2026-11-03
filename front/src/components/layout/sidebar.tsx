@@ -13,10 +13,12 @@ import {
   Star,
   Tag,
 } from 'lucide-react'
-import { type ReactNode, useMemo } from 'react'
+import { type ReactNode, useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button.tsx'
 import { promptDialog } from '@/components/ui/dialog.tsx'
+import { MODEL_HASHES_DRAG_TYPE } from '@/constants/drag.ts'
+import { toast } from '@/hooks/useToast.ts'
 import { findDuplicates } from '@/libs/library/duplicates.ts'
 import type { LibrarySearch } from '@/libs/library/filters.ts'
 import {
@@ -31,7 +33,7 @@ import {
 } from '@/queries/useOrganizer.ts'
 import { useSyncQuery } from '@/queries/useSystem.ts'
 import { cn } from '@/utils/cn.ts'
-import { baseName } from '@/utils/format.ts'
+import { baseName, plural } from '@/utils/format.ts'
 
 const COLLECTION_COLORS = [
   '#ff8a3d',
@@ -113,7 +115,9 @@ export const Sidebar = () => {
   const { data: sources = [] } = useSourcesQuery()
   const { data: scan } = useScanQuery()
   const { data: sync } = useSyncQuery()
-  const { create } = useCollectionMutations()
+  const { create, setModels } = useCollectionMutations()
+  // Collection survolée pendant qu'on y glisse des modèles depuis la grille.
+  const [dropTarget, setDropTarget] = useState<string | null>(null)
 
   const counts = useMemo(() => {
     const tags = new Map<string, number>()
@@ -151,6 +155,22 @@ export const Sidebar = () => {
         color: COLLECTION_COLORS[collections.length % COLLECTION_COLORS.length],
       })
     }
+  }
+
+  const dropOn = (id: string, name: string, data: string) => {
+    setDropTarget(null)
+    const hashes = JSON.parse(data) as string[]
+    setModels.mutate(
+      { id, hashes, included: true },
+      {
+        onSuccess: () =>
+          toast(
+            hashes.length === 1
+              ? `Modèle ajouté à « ${name} »`
+              : `${plural(hashes.length, 'modèle')} ajoutés à « ${name} »`,
+          ),
+      },
+    )
   }
 
   return (
@@ -246,20 +266,48 @@ export const Sidebar = () => {
             </p>
           )}
           {collections.map((c) => (
-            <NavItem
+            // biome-ignore lint/a11y/noStaticElementInteractions: cible de dépôt à la souris, l'ajout au clavier passe par la barre de sélection
+            <div
               key={c.id}
-              to="/"
-              search={{ collection: c.id }}
-              icon={
-                <span
-                  className="block size-2.5 rounded-[4px]"
-                  style={{ background: c.color }}
-                />
-              }
-              label={c.name}
-              count={c.hashes.length}
-              active={onLibrary && search.collection === c.id}
-            />
+              onDragOver={(e) => {
+                if (e.dataTransfer.types.includes(MODEL_HASHES_DRAG_TYPE)) {
+                  e.preventDefault()
+                  e.dataTransfer.dropEffect = 'copy'
+                  setDropTarget(c.id)
+                }
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                  setDropTarget(null)
+                }
+              }}
+              onDrop={(e) => {
+                e.preventDefault()
+                dropOn(
+                  c.id,
+                  c.name,
+                  e.dataTransfer.getData(MODEL_HASHES_DRAG_TYPE),
+                )
+              }}
+              className={cn(
+                'rounded-lg',
+                dropTarget === c.id && 'bg-accent-soft ring-1 ring-accent',
+              )}
+            >
+              <NavItem
+                to="/"
+                search={{ collection: c.id }}
+                icon={
+                  <span
+                    className="block size-2.5 rounded-[4px]"
+                    style={{ background: c.color }}
+                  />
+                }
+                label={c.name}
+                count={c.hashes.length}
+                active={onLibrary && search.collection === c.id}
+              />
+            </div>
           ))}
         </Section>
 
