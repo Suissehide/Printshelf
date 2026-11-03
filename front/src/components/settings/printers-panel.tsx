@@ -10,6 +10,9 @@ import {
 import { fieldClass, Panel } from './panel.tsx'
 
 const EMPTY = { name: '', x: '', y: '', z: '' }
+const PRESETS_BY_BRAND = Object.entries(
+  Object.groupBy(PRINTER_PRESETS, (p) => p.name.split(' ')[0]),
+)
 
 // Imprimantes et volume d'impression : servent au badge « Trop grand » et au filtre
 // « Tient sur… » de la bibliothèque. Synchronisées entre ordinateurs.
@@ -79,17 +82,31 @@ export const PrintersPanel = () => {
           className={fieldClass}
         >
           <option value="">Choisir un modèle courant…</option>
-          {PRINTER_PRESETS.map((p) => (
-            <option key={p.name} value={p.name}>
-              {p.name} — {p.x} × {p.y} × {p.z}
-            </option>
+          {PRESETS_BY_BRAND.map(([brand, presets]) => (
+            <optgroup key={brand} label={brand}>
+              {presets?.map((p) => (
+                <option key={p.name} value={p.name}>
+                  {p.name} — {p.x} × {p.y} × {p.z}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
+        <datalist id="printer-presets">
+          {PRINTER_PRESETS.map((p) => (
+            <option key={p.name} value={p.name} />
+          ))}
+        </datalist>
         <div className="flex flex-wrap items-center gap-2">
           <input
             value={draft.name}
-            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-            placeholder="Nom, ex. A1 du salon"
+            onChange={(e) =>
+              PRINTER_PRESETS.some((p) => p.name === e.target.value)
+                ? applyPreset(e.target.value)
+                : setDraft({ ...draft, name: e.target.value })
+            }
+            list="printer-presets"
+            placeholder="Nom ou modèle, ex. Centauri Carbon"
             className={`${fieldClass} min-w-40 flex-1`}
           />
           {(['x', 'y', 'z'] as const).map((axis) => (
