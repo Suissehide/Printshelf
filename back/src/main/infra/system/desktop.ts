@@ -72,15 +72,15 @@ const KNOWN_SLICERS: [string, RegExp][] = [
   ['OrcaSlicer', /^orca[- ]?slicer/i],
   ['PrusaSlicer', /^prusa[- ]?slicer/i],
   ['UltiMaker Cura', /^(ultimaker[- ])?cura/i],
-  ['Creality Print', /^creality ?print/i],
-  ['Anycubic Slicer Next', /^anycubic ?slicer/i],
+  ['Creality Print', /^creality[- ]?print/i],
+  ['Anycubic Slicer Next', /^anycubic[- ]?slicer/i],
   ['Snapmaker Orca', /^snapmaker[- ]?orca/i],
-  ['SuperSlicer', /^superslicer/i],
-  ['ElegooSlicer', /^elegoo ?slicer/i],
+  ['SuperSlicer', /^super[- ]?slicer/i],
+  ['ElegooSlicer', /^elegoo[- ]?slicer/i],
   ['Lychee Slicer', /^lychee/i],
   ['CHITUBOX', /^chitubox/i],
-  ['ideaMaker', /^ideamaker/i],
-  ['FlashPrint', /^flashprint/i],
+  ['ideaMaker', /^idea[- ]?maker/i],
+  ['FlashPrint', /^flash[- ]?print/i],
 ]
 
 const listDir = async (dir: string): Promise<string[]> => {
