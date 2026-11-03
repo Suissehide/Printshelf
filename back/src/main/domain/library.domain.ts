@@ -33,6 +33,7 @@ import {
   splitArchivePath,
   walk,
 } from '../infra/fs/model-files.ts'
+import { commonDir, freePath, safeName } from '../infra/fs/paths.ts'
 import {
   EMPTY_PRINT_INFO,
   type PrintInfo,
@@ -453,6 +454,46 @@ export class LibraryDomain {
       throw Boom.notFound('Fichier absent de la bibliothèque')
     }
     return row
+  }
+
+  // * RANGEMENT
+
+  // Range des fichiers dans un dossier créé à côté d'eux (dans leur plus proche parent commun).
+  // Seule écriture de Printshelf dans les sources, et seulement sur demande : un déplacement, jamais
+  // d'écrasement ni de suppression. Les métadonnées suivent (elles sont rattachées au hash).
+  async groupIntoFolder(
+    paths: string[],
+    name: string,
+  ): Promise<{ folder: string; moved: { from: string; to: string }[] }> {
+    const rows = [...new Set(paths)].map((p) => this.#requireIndexed(p))
+    if (rows.some((r) => r.archive)) {
+      throw Boom.badRequest(
+        'Un fichier rangé dans une archive ne peut pas être déplacé',
+      )
+    }
+    const source = this.#files
+      .listSources()
+      .find((s) => s.id === rows[0].source_id)
+    if (!source || rows.some((r) => r.source_id !== source.id)) {
+      throw Boom.badRequest('Les fichiers doivent venir de la même source')
+    }
+    const folder = path.join(
+      commonDir(rows.map((r) => r.dir)),
+      safeName(name, 'Objet'),
+    )
+    if (!folder.startsWith(source.path + path.sep)) {
+      throw Boom.badRequest('Dossier hors de la source')
+    }
+    await fs.mkdir(folder, { recursive: true })
+    const moved: { from: string; to: string }[] = []
+    for (const row of rows.filter((r) => r.dir !== folder)) {
+      const target = await freePath(folder, row.name)
+      await fs.rename(row.path, target)
+      this.#files.moveFile(row.path, target, folder, path.basename(target))
+      moved.push({ from: row.path, to: target })
+    }
+    this.startScan([source.id])
+    return { folder, moved }
   }
 
   readContent(filePath: string): Promise<Buffer> {

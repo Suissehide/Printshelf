@@ -52,6 +52,13 @@ export class FileRepository {
       .get(hash)
   }
 
+  // Fichier déplacé par Printshelf : l'index suit tout de suite, sans attendre le scan.
+  moveFile(from: string, to: string, dir: string, name: string): void {
+    this.#db
+      .prepare('UPDATE file SET path = ?, dir = ?, name = ? WHERE path = ?')
+      .run(to, dir, name, from)
+  }
+
   findFile(path: string): FileRow | undefined {
     return this.#db.prepare('SELECT * FROM file WHERE path = ?').get(path) as
       | FileRow

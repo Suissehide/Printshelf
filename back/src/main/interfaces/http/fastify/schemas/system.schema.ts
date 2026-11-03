@@ -6,6 +6,14 @@ export const openBodySchema = z.object({
   slicerId: z.string().optional(),
 })
 export const revealBodySchema = z.object({ path: z.string().min(1) })
+export const groupFolderBodySchema = z.object({
+  paths: z.array(z.string().min(1)).min(1).max(200),
+  name: z.string().trim().min(1).max(100),
+})
+export const groupFolderResultSchema = z.object({
+  folder: z.string(),
+  moved: z.array(z.object({ from: z.string(), to: z.string() })),
+})
 
 export const syncStatusSchema = z.object({
   folder: z.string().nullable(),

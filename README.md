@@ -8,7 +8,8 @@
 
 Printshelf range les fichiers `.3mf`, `.stl`, `.obj`, `.ply`, `.glb`, `.step` et `.gcode` que vous avez
 déjà — archives ZIP, RAR et 7z comprises — les affiche en miniatures, les ouvre en 3D, et les envoie à votre slicer en un geste.
-Tout reste sur votre ordinateur : rien n'est déplacé, renommé ni envoyé en ligne.
+Tout reste sur votre ordinateur : rien n'est envoyé en ligne, et rien n'est déplacé ni renommé sans
+que vous le demandiez.
 
 ![Node.js 24+](https://img.shields.io/badge/Node.js-24%2B-3c873a?logo=node.js&logoColor=white)
 ![macOS · Windows · Linux](https://img.shields.io/badge/macOS%20·%20Windows%20·%20Linux-local-ff8a3d)
@@ -44,6 +45,9 @@ imprimer.
 - **Collections et tags** pour regrouper sans déplacer un seul fichier, avec des **tags suggérés** tirés
   des dossiers et du nom du fichier, et des **actions groupées** sur une sélection (`⌘`/`Ctrl`-clic,
   `Maj`-clic) : tag, collection, favori, créateur et page d'origine.
+- **Pièces d'un même objet rangées ensemble** : les fichiers voisins au nom commun (`repose_casque_base`,
+  `repose_casque_bras`…) sont proposés sur la fiche du modèle pour être déplacés dans un dossier à leur nom ;
+  une sélection peut aussi être rangée dans un dossier. Rien n'est jamais écrasé ni supprimé.
 - **Grille virtualisée** : fluide même sur des dizaines de milliers de modèles.
 - **Surveillance des dossiers** : un modèle téléchargé apparaît tout seul.
 

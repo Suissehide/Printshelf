@@ -83,6 +83,17 @@ describe('garde-fous HTTP', () => {
         })
       ).statusCode,
     ).toBe(501)
+    // Déplacer des fichiers : jamais sur un serveur (modèles en lecture seule).
+    expect(
+      (
+        await app.inject({
+          method: 'POST',
+          url: '/api/organize/folder',
+          headers: auth,
+          payload: { paths: ['/x.stl'], name: 'Objet' },
+        })
+      ).statusCode,
+    ).toBe(501)
     expect(
       (
         await app.inject({ url: '/api/system/capabilities', headers: auth })

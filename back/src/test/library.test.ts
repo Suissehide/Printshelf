@@ -125,6 +125,60 @@ describe('bibliothèque', () => {
     expect(companions.map((c) => c.name)).toContain('notice.pdf')
   })
 
+  it('range des fichiers dans un nouveau dossier, sans rien écraser ni toucher aux archives', async () => {
+    current = await makeLibrary()
+    const { source } = current
+    await fs.writeFile(path.join(source, 'repose_casque_base.stl'), STL)
+    await fs.writeFile(path.join(source, 'repose_casque_bras.stl'), `${STL} `)
+    // Un fichier du même nom attend déjà dans le dossier cible : il ne doit pas être écrasé.
+    await fs.mkdir(path.join(source, 'Repose casque'))
+    await fs.writeFile(
+      path.join(source, 'Repose casque', 'repose_casque_bras.stl'),
+      'déjà là',
+    )
+    await scanned(current)
+    const library = current.app.libraryDomain
+    const hashBefore = library.getFile(
+      path.join(source, 'repose_casque_base.stl'),
+    ).hash
+
+    const result = await library.groupIntoFolder(
+      [
+        path.join(source, 'repose_casque_base.stl'),
+        path.join(source, 'repose_casque_bras.stl'),
+      ],
+      'Repose casque',
+    )
+    expect(result.folder).toBe(path.join(source, 'Repose casque'))
+    expect(result.moved.map((m) => path.basename(m.to)).sort()).toEqual([
+      'repose_casque_base.stl',
+      'repose_casque_bras (2).stl',
+    ])
+    expect(
+      await fs.readFile(
+        path.join(source, 'Repose casque', 'repose_casque_bras.stl'),
+        'utf8',
+      ),
+    ).toBe('déjà là')
+    await expect(
+      fs.stat(path.join(source, 'repose_casque_base.stl')),
+    ).rejects.toThrow()
+
+    // L'index suit tout de suite : même contenu (même hash) au nouvel emplacement.
+    expect(
+      library.getFile(
+        path.join(source, 'Repose casque', 'repose_casque_base.stl'),
+      ).hash,
+    ).toBe(hashBefore)
+
+    await expect(
+      library.groupIntoFolder(
+        [`${source}/pack.zip::pack/STL/dragon.stl`],
+        'Dragon',
+      ),
+    ).rejects.toThrow(/archive/)
+  })
+
   it('lit les infos d’impression et la miniature d’un plateau', async () => {
     current = await makeLibrary()
     await scanned(current)

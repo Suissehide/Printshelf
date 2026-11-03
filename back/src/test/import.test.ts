@@ -5,8 +5,8 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { buildContainer } from '../main/application/container.ts'
-import { safeName } from '../main/domain/import.domain.ts'
 import { hashFile, sha1 } from '../main/infra/fs/model-files.ts'
+import { safeName } from '../main/infra/fs/paths.ts'
 import { testConfig } from './test-config.ts'
 
 const STL =

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { Model } from '../../types/library.ts'
 import { baseModelName, findDuplicates } from './duplicates.ts'
 import { filterModels, validateLibrarySearch } from './filters.ts'
+import { commonName, relatedParts } from './groups.ts'
 import { suggestTags } from './tags.ts'
 
 const model = (path: string, over: Partial<Model> = {}): Model => ({
@@ -183,5 +184,49 @@ describe('suggestTags', () => {
         ['rouge'],
       ),
     ).toEqual(['rouge', 'warhammer', 'tete'])
+  })
+})
+
+describe('relatedParts', () => {
+  const lib = [
+    model('/lib/repose_casque_base.stl'),
+    model('/lib/repose_casque_bras.stl'),
+    model('/lib/Repose_Casque_vis.3mf', { ext: '3mf' }),
+    model('/lib/repose_pied.stl'),
+    model('/lib/benchy.3mf', { ext: '3mf' }),
+    model('/lib/pack.zip::repose_casque_x.stl', { archive: '/lib/pack.zip' }),
+  ]
+
+  it('regroupe les voisins au nom commun, insensible à la casse, hors archive', () => {
+    const group = relatedParts(lib[0], lib)
+    expect(group?.name).toBe('repose casque')
+    expect(group?.models.map((m) => m.name)).toEqual([
+      'repose_casque_base.stl',
+      'repose_casque_bras.stl',
+      'Repose_Casque_vis.3mf',
+    ])
+  })
+
+  it('ne propose rien sans voisin, dans une archive, ou déjà dans un dossier à ce nom', () => {
+    expect(relatedParts(lib[4], lib)).toBeNull()
+    expect(relatedParts(lib[5], lib)).toBeNull()
+    const tidy = lib
+      .slice(0, 3)
+      .map((m) => ({ ...m, dir: '/lib/Repose-casque (Thingiverse)' }))
+    expect(relatedParts(tidy[0], tidy)).toBeNull()
+  })
+})
+
+describe('commonName', () => {
+  it('propose le début de nom commun, sinon le premier nom', () => {
+    expect(
+      commonName([
+        { name: 'repose_casque_base.stl' },
+        { name: 'Repose-Casque bras.3mf' },
+      ]),
+    ).toBe('repose casque')
+    expect(commonName([{ name: 'tete.stl' }, { name: 'corps.stl' }])).toBe(
+      'tete',
+    )
   })
 })

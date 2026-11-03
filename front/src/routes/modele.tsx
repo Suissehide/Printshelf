@@ -16,6 +16,7 @@ import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { LibraryApi } from '@/api/library.api.ts'
 import { CompanionsPanel } from '@/components/model/companions-panel.tsx'
 import { PrintPanel } from '@/components/model/print-panel.tsx'
+import { RelatedParts } from '@/components/model/related-parts.tsx'
 import { SourcePanel } from '@/components/model/source-panel.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { EmptyState } from '@/components/ui/empty-state.tsx'
@@ -419,6 +420,8 @@ function ModelPage() {
         </Field>
 
         <CollectionsField model={model} />
+
+        <RelatedParts model={model} models={models} />
 
         <Field label="Notes">
           <textarea

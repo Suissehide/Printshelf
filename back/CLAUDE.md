@@ -46,8 +46,10 @@ interfaces/http/fastify/       # serveur, garde-fous (plugins/guard.plugin.ts), 
 - **Schéma** : `CREATE TABLE IF NOT EXISTS` + `ADDED_COLUMNS` (`sqlite-client.ts`) pour toute colonne
   ajoutée à une base existante. Une colonne ajoutée à une table synchronisée doit être nullable : les
   fichiers de synchro d'une version plus ancienne ne la portent pas.
-- **Les fichiers des sources ne sont jamais modifiés.** Une entrée d'archive à ouvrir dans un slicer est
-  extraite dans `DATA_DIR/extracted/`.
+- **Les fichiers des sources ne sont jamais modifiés**, sauf « ranger dans un dossier » sur demande
+  (`LibraryDomain.groupIntoFolder`, route `/api/organize/folder`, bureau uniquement) : un déplacement dans
+  un nouveau dossier voisin, jamais d'écrasement (`freePath`) ni de suppression, l'index suivant tout de
+  suite. Une entrée d'archive à ouvrir dans un slicer est extraite dans `DATA_DIR/extracted/`.
 - **Analyse en tâche de fond** (`LibraryDomain.#measureMissing`) : après chaque scan, chaque contenu
   jamais vu est lu une fois pour ses dimensions (`model_dims`) et son « à propos » (`model_about`), deux
   tables LOCALES par hash. Ce que l'utilisateur saisit (créateur, lien) vit dans `model_meta`

@@ -17,6 +17,11 @@ export const SystemApi = {
     request('/system/open', { method: 'POST', json: { paths, slicerId } }),
   reveal: (path: string) =>
     request('/system/reveal', { method: 'POST', json: { path } }),
+  groupIntoFolder: (paths: string[], name: string) =>
+    request<{ folder: string; moved: { from: string; to: string }[] }>(
+      '/organize/folder',
+      { method: 'POST', json: { paths, name } },
+    ),
 
   getSync: () => request<SyncStatus>('/sync'),
   setSyncFolder: (folder: string | null) =>

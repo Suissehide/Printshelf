@@ -1,11 +1,4 @@
-import {
-  Camera,
-  Grid3x3,
-  Loader2,
-  Rotate3d,
-  Shapes,
-  Undo2,
-} from 'lucide-react'
+import { Camera, Grid3x3, Loader2, Rotate3d, Shapes, Undo2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'

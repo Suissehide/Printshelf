@@ -10,6 +10,8 @@ import {
   type Slicer,
 } from '../../../../infra/system/desktop.ts'
 import {
+  groupFolderBodySchema,
+  groupFolderResultSchema,
   importBodySchema,
   importFolderSchema,
   importResultSchema,
@@ -55,7 +57,7 @@ export const systemRouter: FastifyPluginCallbackZod = (
 
   fastify.addHook('onRequest', (request, _reply, done) => {
     const desktopOnly =
-      /^\/api\/(system\/(pick-folder|slicers|open|reveal)|imports)/.test(
+      /^\/api\/(system\/(pick-folder|slicers|open|reveal)|imports|organize)/.test(
         request.url,
       )
     done(
@@ -184,6 +186,19 @@ export const systemRouter: FastifyPluginCallbackZod = (
     async (request) => ({
       folder: await importDomain.setFolder(request.body.folder),
     }),
+  )
+
+  // Déplace des fichiers dans un nouveau dossier (sur un serveur, les modèles sont en lecture seule).
+  fastify.post(
+    '/organize/folder',
+    {
+      schema: {
+        body: groupFolderBodySchema,
+        response: { 200: groupFolderResultSchema },
+      },
+    },
+    (request) =>
+      libraryDomain.groupIntoFolder(request.body.paths, request.body.name),
   )
 
   fastify.post(

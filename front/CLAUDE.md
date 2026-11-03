@@ -17,8 +17,8 @@ api/                       # appels HTTP, un fichier par domaine (http.ts : `req
 queries/                   # hooks TanStack Query (useLibrary, useOrganizer, useSystem)
 components/{layout,library,viewer,ui}/
 libs/library/              # logique pure testée : filtres, doublons (exacts, même géométrie, même nom),
-                           # tags.ts (suggestions tirées du chemin), slicer.ts (choix du slicer, tient
-                           # sur le plateau ?, imprimantes courantes)
+                           # tags.ts (suggestions tirées du chemin), groups.ts (pièces liées à ranger),
+                           # slicer.ts (choix du slicer, tient sur le plateau ?, imprimantes courantes)
 libs/three/                # parse-3mf (composants p:path Bambu), parse-step (OpenCascade WASM, chargé à
                            # la demande), load-model (G-code compris), stage, thumbnail-queue,
                            # slicer-layout (couleurs de filament, plateau affiché)

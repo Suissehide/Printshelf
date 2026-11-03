@@ -1,7 +1,17 @@
-import { Download, ListPlus, Send, Star, Tag, User, X } from 'lucide-react'
+import {
+  Download,
+  FolderInput,
+  ListPlus,
+  Send,
+  Star,
+  Tag,
+  User,
+  X,
+} from 'lucide-react'
 
 import { Button } from '@/components/ui/button.tsx'
 import { formDialog, promptDialog } from '@/components/ui/dialog.tsx'
+import { useGroupIntoFolder } from '@/hooks/useGroupIntoFolder.ts'
 import { useOpenInSlicer } from '@/hooks/useOpenInSlicer.ts'
 import {
   useCollectionMutations,
@@ -25,6 +35,9 @@ export const SelectionBar = ({
   const meta = useMetaMutation()
   const queue = useQueueMutations()
   const { open, desktop } = useOpenInSlicer()
+  const groupIntoFolder = useGroupIntoFolder()
+  // Les fichiers d'une archive ne peuvent pas être déplacés.
+  const movable = desktop && models.every((m) => !m.archive)
   const hashes = [...new Set(models.map((m) => m.hash))]
 
   const addTag = async () => {
@@ -99,6 +112,14 @@ export const SelectionBar = ({
         <Button size="md" onClick={setSource}>
           <User /> Source
         </Button>
+        {movable && (
+          <Button
+            size="md"
+            onClick={async () => (await groupIntoFolder(models)) && onClear()}
+          >
+            <FolderInput /> Dossier
+          </Button>
+        )}
         <Button
           size="md"
           onClick={() => {

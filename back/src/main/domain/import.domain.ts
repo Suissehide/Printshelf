@@ -4,6 +4,7 @@ import Boom from '@hapi/boom'
 
 import { withArchive } from '../infra/fs/archive.ts'
 import { hashFile, isArchive, isModel, sha1 } from '../infra/fs/model-files.ts'
+import { exists, freePath, safeName } from '../infra/fs/paths.ts'
 import type { FileRepository } from '../infra/repositories/file.repository.ts'
 import type { Logger } from '../utils/logger.ts'
 import type { LibraryDomain } from './library.domain.ts'
@@ -35,32 +36,6 @@ const IMAGE_TYPES: Record<string, string> = {
   'image/png': 'png',
   'image/webp': 'webp',
   'image/gif': 'gif',
-}
-
-// Nom de dossier sûr sur Mac, Windows et Linux.
-export const safeName = (value: string, fallback = 'Modèle') =>
-  value
-    .replace(/[<>:"/\\|?*]/g, ' ')
-    .replace(/\p{Cc}/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .replace(/^[ .]+|[ .]+$/g, '')
-    .slice(0, 100) || fallback
-
-const exists = (p: string) =>
-  fs.stat(p).then(
-    () => true,
-    () => false,
-  )
-
-// Chemin libre : « nom.stl », sinon « nom (2).stl », « nom (3).stl »…
-const freePath = async (dir: string, name: string) => {
-  const ext = path.extname(name)
-  const base = name.slice(0, name.length - ext.length)
-  let candidate = path.join(dir, name)
-  for (let n = 2; await exists(candidate); n++) {
-    candidate = path.join(dir, `${base} (${n})${ext}`)
-  }
-  return candidate
 }
 
 export class ImportDomain {

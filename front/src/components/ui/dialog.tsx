@@ -14,6 +14,7 @@ export type DialogField = {
   type?: 'text' | 'url'
   required?: boolean
   maxLength?: number
+  defaultValue?: string
 }
 
 type Values = Record<string, string>
@@ -97,6 +98,8 @@ export const Dialogs = () => {
   useEffect(() => {
     if (request) {
       ref.current?.showModal()
+      // Valeur proposée présélectionnée : la frappe la remplace.
+      ref.current?.querySelector('input')?.select()
     }
   }, [request])
 
@@ -142,6 +145,7 @@ export const Dialogs = () => {
               required={f.required}
               autoComplete="off"
               placeholder={f.placeholder}
+              defaultValue={f.defaultValue}
               maxLength={f.maxLength ?? 120}
               className={fieldClass}
             />
