@@ -272,6 +272,19 @@ describe('browseFolder', () => {
     )
     const sources = [src(1, '/lib'), src(2, '/vide')]
     expect(currentFolder(sources)).toBe('')
+    // Une collection s'ouvre sur le dossier commun à ses modèles.
+    expect(currentFolder(sources, undefined, undefined, lib.slice(1, 4))).toBe(
+      '/lib',
+    )
+    expect(currentFolder(sources, undefined, undefined, lib.slice(1, 3))).toBe(
+      '/lib/Repose casque',
+    )
+    // Hors de toute source (impossible en pratique) : la racine.
+    expect(
+      currentFolder(sources, undefined, undefined, [
+        model('/ailleurs/x.stl', { dir: '/ailleurs' }),
+      ]),
+    ).toBe('')
     expect(
       browseFolder(lib, sources, '').folders.map((f) => [f.name, f.count]),
     ).toEqual([['lib', 5]])

@@ -41,14 +41,39 @@ const add = (folder: FolderEntry, model: Model) => {
   }
 }
 
-// Dossier affiché : celui de l'URL, sinon la source choisie, sinon la seule source, sinon la racine.
+// Plus profond dossier commun à des modèles ('' s'ils n'en ont pas).
+const commonDir = (models: Model[]) => {
+  const [first, ...rest] = models.map((m) => norm(m.dir).split('/'))
+  let length = first?.length ?? 0
+  for (const parts of rest) {
+    let i = 0
+    while (i < length && parts[i] === first[i]) {
+      i++
+    }
+    length = i
+  }
+  return first ? first.slice(0, length).join('/') : ''
+}
+
+// Dossier affiché : celui de l'URL ; pour une collection ou un tag, le dossier commun à ses modèles
+// (pas de dossiers vides à traverser) ; sinon la source choisie, la seule source, ou la racine.
 export const currentFolder = (
   sources: Pick<Source, 'id' | 'path'>[],
   dir?: string,
   sourceId?: number,
+  narrowedTo?: Model[],
 ): string => {
   if (dir) {
     return norm(dir)
+  }
+  const common = narrowedTo?.length ? commonDir(narrowedTo) : ''
+  if (
+    common &&
+    sources.some(
+      (s) => common === norm(s.path) || common.startsWith(`${norm(s.path)}/`),
+    )
+  ) {
+    return common
   }
   const source =
     sources.find((s) => s.id === sourceId) ??

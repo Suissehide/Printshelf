@@ -46,14 +46,14 @@ export const validateLibrarySearch = (
       : undefined,
 })
 
-// Les dossiers ne servent qu'à parcourir : une recherche ou un filtre montre les résultats à plat.
+// Les dossiers restent visibles dans une collection, un tag ou une vue ; seule une recherche texte
+// montre les résultats à plat, d'où qu'ils viennent.
 export const browsingFolders = (search: LibrarySearch): boolean =>
-  search.layout !== 'flat' &&
-  !search.q &&
-  !search.collection &&
-  !search.tag &&
-  !search.view &&
-  !search.printer
+  search.layout !== 'flat' && !search.q
+
+// Collection, tag, vue ou imprimante : la sélection ne couvre qu'une partie de la bibliothèque.
+export const isNarrowed = (search: LibrarySearch): boolean =>
+  !!(search.collection || search.tag || search.view || search.printer)
 
 const normalize = (s: string) =>
   s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')

@@ -20,6 +20,7 @@ import { useOpenInSlicer } from '@/hooks/useOpenInSlicer.ts'
 import {
   browsingFolders,
   filterModels,
+  isNarrowed,
   type LibrarySearch,
   validateLibrarySearch,
 } from '@/libs/library/filters.ts'
@@ -94,7 +95,12 @@ const useFolderListing = (
         ? browseFolder(
             filtered,
             sources,
-            currentFolder(sources, search.dir, search.source),
+            currentFolder(
+              sources,
+              search.dir,
+              search.source,
+              isNarrowed(search) ? filtered : undefined,
+            ),
           )
         : null,
     [filtered, sources, search],
