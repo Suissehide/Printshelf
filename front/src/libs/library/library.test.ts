@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { Model } from '../../types/library.ts'
 import { baseModelName, findDuplicates } from './duplicates.ts'
 import { filterModels, validateLibrarySearch } from './filters.ts'
+import { browseFolder, currentFolder } from './folders.ts'
 import { commonName, relatedParts } from './groups.ts'
 import { suggestTags } from './tags.ts'
 
@@ -228,5 +229,51 @@ describe('commonName', () => {
     expect(commonName([{ name: 'tete.stl' }, { name: 'corps.stl' }])).toBe(
       'tete',
     )
+  })
+})
+
+describe('browseFolder', () => {
+  const src = (id: number, path: string) => ({ id, path })
+  const at = (path: string) =>
+    model(path, { dir: path.slice(0, path.lastIndexOf('/')) })
+  const lib = [
+    at('/lib/benchy.3mf'),
+    at('/lib/Repose casque/base.stl'),
+    at('/lib/Repose casque/bras.stl'),
+    at('/lib/Dragon/STL/tete.stl'),
+    model('/lib/pack.zip::dragon/aile.stl', {
+      dir: '/lib/pack.zip/dragon',
+      archive: '/lib/pack.zip',
+    }),
+  ]
+
+  it('liste les sous-dossiers (archives comprises) puis les fichiers du dossier', () => {
+    const listing = browseFolder(lib, [src(1, '/lib')], '/lib')
+    expect(listing.folders.map((f) => [f.name, f.count, f.archive])).toEqual([
+      ['Dragon', 1, false],
+      ['pack.zip', 1, true],
+      ['Repose casque', 2, false],
+    ])
+    expect(listing.files.map((m) => m.name)).toEqual(['benchy.3mf'])
+    expect(listing.crumbs).toEqual([{ path: '/lib', name: 'lib' }])
+  })
+
+  it('descend dans un dossier avec son fil d’Ariane, chemins Windows compris', () => {
+    const windows = lib.map((m) => ({ ...m, dir: m.dir.replaceAll('/', '\\') }))
+    const listing = browseFolder(windows, [src(1, '\\lib')], '/lib/Dragon')
+    expect(listing.folders.map((f) => f.name)).toEqual(['STL'])
+    expect(listing.crumbs.map((c) => c.name)).toEqual(['lib', 'Dragon'])
+  })
+
+  it('part de la seule source, ou liste les sources à la racine', () => {
+    expect(currentFolder([src(1, '/lib/')])).toBe('/lib')
+    expect(currentFolder([src(1, '/a'), src(2, '/lib')], undefined, 2)).toBe(
+      '/lib',
+    )
+    const sources = [src(1, '/lib'), src(2, '/vide')]
+    expect(currentFolder(sources)).toBe('')
+    expect(
+      browseFolder(lib, sources, '').folders.map((f) => [f.name, f.count]),
+    ).toEqual([['lib', 5]])
   })
 })

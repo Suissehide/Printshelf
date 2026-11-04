@@ -1,5 +1,14 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { FolderPlus, Loader2, Search, SearchX, X } from 'lucide-react'
+import {
+  ChevronRight,
+  Folder,
+  FolderPlus,
+  LayoutGrid,
+  Loader2,
+  Search,
+  SearchX,
+  X,
+} from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { ModelGrid } from '@/components/library/model-grid.tsx'
@@ -9,10 +18,16 @@ import { EmptyState } from '@/components/ui/empty-state.tsx'
 import { Segment } from '@/components/ui/segment.tsx'
 import { useOpenInSlicer } from '@/hooks/useOpenInSlicer.ts'
 import {
+  browsingFolders,
   filterModels,
   type LibrarySearch,
   validateLibrarySearch,
 } from '@/libs/library/filters.ts'
+import {
+  browseFolder,
+  currentFolder,
+  type FolderListing,
+} from '@/libs/library/folders.ts'
 import {
   useModels,
   useScanQuery,
@@ -22,7 +37,7 @@ import {
   useCollectionsQuery,
   usePreferencesQuery,
 } from '@/queries/useOrganizer.ts'
-import type { Collection, Source } from '@/types/library.ts'
+import type { Collection, Model, Source } from '@/types/library.ts'
 import { baseName, plural } from '@/utils/format.ts'
 import { shortcutAllowed } from '@/utils/keyboard.ts'
 
@@ -66,6 +81,24 @@ const libraryTitle = (
   }
   return search.view ? VIEW_TITLES[search.view] : 'Bibliothèque'
 }
+
+// Navigation par dossiers (sauf recherche ou filtre) : sous-dossiers puis fichiers du dossier.
+const useFolderListing = (
+  filtered: Model[],
+  sources: Source[],
+  search: LibrarySearch,
+) =>
+  useMemo(
+    () =>
+      browsingFolders(search)
+        ? browseFolder(
+            filtered,
+            sources,
+            currentFolder(sources, search.dir, search.source),
+          )
+        : null,
+    [filtered, sources, search],
+  )
 
 function LibraryPage() {
   const search = Route.useSearch()
@@ -112,6 +145,12 @@ function LibraryPage() {
     () => filterModels(models, search, prefs?.printers),
     [models, search, prefs?.printers],
   )
+  const listing = useFolderListing(filtered, sources, search)
+  const openFolder = (dir: string) =>
+    navigate({ search: (prev) => ({ ...prev, dir: dir || undefined }) })
+  const shownCount = listing
+    ? listing.folders.length + listing.files.length
+    : filtered.length
   const selectedModels = useMemo(
     () => models.filter((m) => selection.has(m.path)),
     [models, selection],
@@ -207,21 +246,23 @@ function LibraryPage() {
           cardSize={cardSize}
           onCardSize={changeCardSize}
         />
+        {listing && (
+          <FolderCrumbs
+            listing={listing}
+            multipleSources={sources.length > 1}
+            onOpen={openFolder}
+          />
+        )}
       </header>
 
       <div className="min-h-0 flex-1">
-        {filtered.length === 0 && !isPending ? (
-          <EmptyState
-            icon={<SearchX />}
-            title={scan?.running ? 'Scan en cours…' : 'Aucun modèle ici'}
-          >
-            {scan?.running
-              ? 'Les modèles apparaissent à la fin du scan.'
-              : 'Essayez une autre recherche ou retirez un filtre.'}
-          </EmptyState>
+        {shownCount === 0 && !isPending ? (
+          <NothingHere scanning={!!scan?.running} />
         ) : (
           <ModelGrid
-            models={filtered}
+            folders={listing?.folders}
+            onOpenFolder={openFolder}
+            models={listing ? listing.files : filtered}
             cardSize={cardSize}
             selection={selection}
             onSelectionChange={setSelection}
@@ -236,6 +277,57 @@ function LibraryPage() {
         />
       )}
     </>
+  )
+}
+
+const NothingHere = ({ scanning }: { scanning: boolean }) => (
+  <EmptyState
+    icon={<SearchX />}
+    title={scanning ? 'Scan en cours…' : 'Aucun modèle ici'}
+  >
+    {scanning
+      ? 'Les modèles apparaissent à la fin du scan.'
+      : 'Essayez une autre recherche ou retirez un filtre.'}
+  </EmptyState>
+)
+
+// Fil d'Ariane du dossier parcouru : chaque étape ramène à ce dossier.
+function FolderCrumbs({
+  listing,
+  multipleSources,
+  onOpen,
+}: {
+  listing: FolderListing
+  multipleSources: boolean
+  onOpen: (dir: string) => void
+}) {
+  const crumbs = [
+    ...(multipleSources ? [{ path: '', name: 'Sources' }] : []),
+    ...listing.crumbs,
+  ]
+  return (
+    <nav
+      aria-label="Dossier"
+      className="flex min-w-0 flex-wrap items-center gap-0.5 text-[13px]"
+    >
+      <Folder className="mr-1 size-4 shrink-0 text-accent" />
+      {crumbs.map((c, i) => (
+        <span key={c.path} className="flex min-w-0 items-center gap-0.5">
+          {i > 0 && <ChevronRight className="size-3.5 text-ink-mute" />}
+          {i === crumbs.length - 1 ? (
+            <span className="truncate font-medium text-ink">{c.name}</span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onOpen(c.path)}
+              className="truncate rounded px-1 text-ink-soft hover:bg-raised hover:text-ink"
+            >
+              {c.name}
+            </button>
+          )}
+        </span>
+      ))}
+    </nav>
   )
 }
 
@@ -272,6 +364,25 @@ function LibraryFilters({
           </Segment>
         ))}
       </div>
+
+      {browsingFolders({ ...search, layout: undefined }) && (
+        <div className="flex items-center gap-0.5 rounded-lg border border-line bg-surface p-0.5">
+          <Segment
+            active={search.layout !== 'flat'}
+            onClick={() => setSearch({ layout: undefined })}
+            title="Parcourir par dossiers"
+          >
+            <Folder className="size-3.5" />
+          </Segment>
+          <Segment
+            active={search.layout === 'flat'}
+            onClick={() => setSearch({ layout: 'flat', dir: undefined })}
+            title="Tous les modèles à plat"
+          >
+            <LayoutGrid className="size-3.5" />
+          </Segment>
+        </div>
+      )}
 
       {filtered && (
         <Link

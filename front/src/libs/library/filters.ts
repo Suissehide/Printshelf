@@ -14,6 +14,9 @@ export type LibrarySearch = {
   source?: number
   // Identifiant d'imprimante : seulement les modèles mesurés qui tiennent sur son plateau.
   printer?: string
+  // Dossier parcouru (navigation par dossiers), et « flat » pour tout voir à plat.
+  dir?: string
+  layout?: 'flat'
 }
 
 const SORTS: LibrarySort[] = ['name', 'recent', 'size']
@@ -35,11 +38,22 @@ export const validateLibrarySearch = (
   collection: text(raw.collection),
   tag: text(raw.tag),
   printer: text(raw.printer),
+  dir: text(raw.dir),
+  layout: raw.layout === 'flat' ? 'flat' : undefined,
   source:
     Number.isInteger(Number(raw.source)) && raw.source !== undefined
       ? Number(raw.source)
       : undefined,
 })
+
+// Les dossiers ne servent qu'à parcourir : une recherche ou un filtre montre les résultats à plat.
+export const browsingFolders = (search: LibrarySearch): boolean =>
+  search.layout !== 'flat' &&
+  !search.q &&
+  !search.collection &&
+  !search.tag &&
+  !search.view &&
+  !search.printer
 
 const normalize = (s: string) =>
   s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')

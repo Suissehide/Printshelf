@@ -10,6 +10,7 @@ import {
 
 import { MODEL_HASHES_DRAG_TYPE } from '@/constants/drag.ts'
 import { useOpenInSlicer } from '@/hooks/useOpenInSlicer.ts'
+import type { FolderEntry } from '@/libs/library/folders.ts'
 import { fitsOn } from '@/libs/library/slicer.ts'
 import {
   useMetaMutation,
@@ -17,12 +18,16 @@ import {
   useQueueMutations,
 } from '@/queries/useOrganizer.ts'
 import type { Model } from '@/types/library.ts'
+import { FolderCard } from './folder-card.tsx'
 import { ModelCard } from './model-card.tsx'
 
 const GAP = 14
 const FOOTER = 62 // hauteur du bandeau nom/format sous la miniature
 
 type ModelGridProps = {
+  // Dossiers affichés avant les modèles (navigation par dossiers).
+  folders?: FolderEntry[]
+  onOpenFolder?: (path: string) => void
   models: Model[]
   cardSize: number
   selection: Set<string>
@@ -32,6 +37,8 @@ type ModelGridProps = {
 // Grille virtualisée : seules les rangées visibles existent dans le DOM, ce qui garde le défilement
 // fluide sur des bibliothèques de plusieurs dizaines de milliers de modèles.
 export const ModelGrid = ({
+  folders = [],
+  onOpenFolder,
   models,
   cardSize,
   selection,
@@ -67,7 +74,8 @@ export const ModelGrid = ({
   const inner = Math.max(0, width - 48)
   const columns = Math.max(1, Math.floor((inner + GAP) / (cardSize + GAP)))
   const cardWidth = (inner - GAP * (columns - 1)) / columns
-  const rowCount = Math.ceil(models.length / columns)
+  const itemCount = folders.length + models.length
+  const rowCount = Math.ceil(itemCount / columns)
 
   const virtualizer = useVirtualizer({
     count: rowCount,
@@ -127,36 +135,50 @@ export const ModelGrid = ({
               gap: GAP,
             }}
           >
-            {models
-              .slice(row.index * columns, row.index * columns + columns)
-              .map((model, i) => {
-                const index = row.index * columns + i
+            {Array.from(
+              {
+                length: Math.min(columns, itemCount - row.index * columns),
+              },
+              (_, i) => row.index * columns + i,
+            ).map((item) => {
+              if (item < folders.length) {
+                const folder = folders[item]
                 return (
-                  <ModelCard
-                    key={model.path}
-                    model={model}
-                    selected={selection.has(model.path)}
-                    selecting={selection.size > 0}
-                    onOpen={() =>
-                      navigate({ to: '/modele', search: { path: model.path } })
-                    }
-                    onSelect={(e) => select(index, e)}
-                    onDragStart={(e) => dragStart(model, e)}
-                    onToggleFavorite={() =>
-                      favorite.mutate({
-                        hash: model.hash,
-                        favorite: !model.favorite,
-                      })
-                    }
-                    onQueue={() =>
-                      queue.add.mutate({ hash: model.hash, name: model.name })
-                    }
-                    desktop={desktop}
-                    oversized={oversized(model)}
-                    onSlicer={() => open([model])}
+                  <FolderCard
+                    key={folder.path}
+                    folder={folder}
+                    onOpen={() => onOpenFolder?.(folder.path)}
                   />
                 )
-              })}
+              }
+              const index = item - folders.length
+              const model = models[index]
+              return (
+                <ModelCard
+                  key={model.path}
+                  model={model}
+                  selected={selection.has(model.path)}
+                  selecting={selection.size > 0}
+                  onOpen={() =>
+                    navigate({ to: '/modele', search: { path: model.path } })
+                  }
+                  onSelect={(e) => select(index, e)}
+                  onDragStart={(e) => dragStart(model, e)}
+                  onToggleFavorite={() =>
+                    favorite.mutate({
+                      hash: model.hash,
+                      favorite: !model.favorite,
+                    })
+                  }
+                  onQueue={() =>
+                    queue.add.mutate({ hash: model.hash, name: model.name })
+                  }
+                  desktop={desktop}
+                  oversized={oversized(model)}
+                  onSlicer={() => open([model])}
+                />
+              )
+            })}
           </div>
         ))}
       </div>
